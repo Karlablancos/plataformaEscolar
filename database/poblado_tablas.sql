@@ -447,34 +447,34 @@ INSERT INTO estudiante_apoderado (id_estudiante, id_apoderado, es_apoderado_titu
 -- ============================================================
 -- CURSO (12)
 -- ============================================================
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (1, 1, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (1, 1, 'B', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (1, 2, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (1, 2, 'B', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (1, 3, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (1, 3, 'B', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (1, 4, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (1, 4, 'B', 'Media', 'Científico Humanista', 2026, false, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (2, 1, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (2, 1, 'B', 'Media', 'Técnico Profesional', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (2, 2, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
-INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_since, estado) VALUES (2, 2, 'B', 'Media', 'Técnico Profesional', 2026, false, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (1, 1, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (1, 1, 'B', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (1, 2, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (1, 2, 'B', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (1, 3, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (1, 3, 'B', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (1, 4, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (1, 4, 'B', 'Media', 'Científico Humanista', 2026, false, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (2, 1, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (2, 1, 'B', 'Media', 'Técnico Profesional', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (2, 2, 'A', 'Media', 'Científico Humanista', 2026, true, 'ACTIVO');
+INSERT INTO curso (id_establecimiento, numero, letra, tipo_ensenianza, modalidad, anio_academico, es_nivel_simce, estado) VALUES (2, 2, 'B', 'Media', 'Técnico Profesional', 2026, false, 'ACTIVO');
 
 -- ============================================================
 -- SALA (12)
 -- ============================================================
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (101, 'Sala 101', 35, 'Aula', 1, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (102, 'Sala 102', 35, 'Aula', 1, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (103, 'Sala 103', 35, 'Aula', 1, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (104, 'Sala 104', 35, 'Aula', 1, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (201, 'Laboratorio Ciencias', 30, 'Laboratorio', 2, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (202, 'Sala de Computación', 30, 'Laboratorio', 2, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (203, 'Laboratorio Química', 28, 'Laboratorio', 2, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (204, 'Sala Multimedia', 32, 'Multimedia', 2, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (301, 'Sala 301', 35, 'Aula', 3, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (302, 'Sala 302', 35, 'Aula', 3, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (303, 'Gimnasio', 100, 'Deportiva', 1, 'ACTIVO');
-INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado) VALUES (304, 'Biblioteca', 50, 'Biblioteca', 1, 'ACTIVO');
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (101, 'Sala 101', 35, 'Aula', 1, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (102, 'Sala 102', 35, 'Aula', 1, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (103, 'Sala 103', 35, 'Aula', 1, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (104, 'Sala 104', 35, 'Aula', 1, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (201, 'Laboratorio Ciencias', 30, 'Laboratorio', 2, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (202, 'Sala de Computación', 30, 'Laboratorio', 2, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (203, 'Laboratorio Química', 28, 'Laboratorio', 2, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (204, 'Sala Multimedia', 32, 'Multimedia', 2, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (301, 'Sala 301', 35, 'Aula', 3, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (302, 'Sala 302', 35, 'Aula', 3, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (303, 'Gimnasio', 100, 'Deportiva', 1, 'ACTIVO', 1);
+INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (304, 'Biblioteca', 50, 'Biblioteca', 1, 'ACTIVO', 1);
 
 -- ============================================================
 -- DOCENTE_ASIGNATURA_CURSO (12)
@@ -543,18 +543,18 @@ INSERT INTO tipo_evaluacion (nombre, puede_eliminarse, descripcion, peso_sugerid
 -- ============================================================
 -- EVALUACION (12)
 -- ============================================================
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (1, 1, 1, 1, 1, 'Prueba 1 - Álgebra', 30.0, '2026-04-10');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (1, 2, 2, 2, 1, 'Control 1 - Comprensión Lectora', 15.0, '2026-04-12');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (1, 3, 3, 3, 1, 'Trabajo - Independencia de Chile', 25.0, '2026-04-20');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (1, 1, 1, 4, 1, 'Examen Final Matemática', 30.0, '2026-07-05');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (1, 2, 2, 5, 1, 'Disertación - Obra Literaria', 20.0, '2026-05-15');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (1, 5, 1, 6, 1, 'Lab. Ciencias - Ecosistemas', 15.0, '2026-05-20');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (2, 1, 1, 1, 1, 'Prueba 1 Matemática 1B', 30.0, '2026-04-10');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (2, 2, 2, 1, 1, 'Prueba 1 Lenguaje 1B', 30.0, '2026-04-14');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (3, 3, 3, 2, 1, 'Control Historia 2A', 15.0, '2026-04-16');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (3, 1, 1, 7, 1, 'Proyecto Matemático 2A', 25.0, '2026-06-01');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (4, 2, 2, 1, 1, 'Prueba Lenguaje 2B', 30.0, '2026-04-18');
-INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombres, ponderacion, fecha) VALUES (4, 4, 4, 4, 1, 'Examen Ed. Física 2B', 30.0, '2026-07-03');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (1, 1, 1, 1, 1, 'Prueba 1 - Álgebra', 30.0, '2026-04-10');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (1, 2, 2, 2, 1, 'Control 1 - Comprensión Lectora', 15.0, '2026-04-12');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (1, 3, 3, 3, 1, 'Trabajo - Independencia de Chile', 25.0, '2026-04-20');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (1, 1, 1, 4, 1, 'Examen Final Matemática', 30.0, '2026-07-05');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (1, 2, 2, 5, 1, 'Disertación - Obra Literaria', 20.0, '2026-05-15');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (1, 5, 1, 6, 1, 'Lab. Ciencias - Ecosistemas', 15.0, '2026-05-20');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (2, 1, 1, 1, 1, 'Prueba 1 Matemática 1B', 30.0, '2026-04-10');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (2, 2, 2, 1, 1, 'Prueba 1 Lenguaje 1B', 30.0, '2026-04-14');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (3, 3, 3, 2, 1, 'Control Historia 2A', 15.0, '2026-04-16');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (3, 1, 1, 7, 1, 'Proyecto Matemático 2A', 25.0, '2026-06-01');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (4, 2, 2, 1, 1, 'Prueba Lenguaje 2B', 30.0, '2026-04-18');
+INSERT INTO evaluacion (id_curso, id_asignatura, id_docente, id_tipo_evaluacion, id_periodo, nombre, ponderacion, fecha) VALUES (4, 4, 4, 4, 1, 'Examen Ed. Física 2B', 30.0, '2026-07-03');
 
 -- ============================================================
 -- NOTA (12) -- con las notas reales del grupo!
