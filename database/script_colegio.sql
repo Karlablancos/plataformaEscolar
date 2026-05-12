@@ -148,10 +148,10 @@ CREATE TABLE tipo_calificacion (
 -- ============================================================
 CREATE TABLE asignatura (
     id_asignatura           SERIAL          PRIMARY KEY,
-    nombre                  VARCHAR(150),
+    nombre                  VARCHAR(150)    NOT NULL,
     codigo                  VARCHAR(20)     NOT NULL,
     horas_semanales         INT             NOT NULL,
-    tipo_ensenanza          VARCHAR(100),
+    tipo_ensenanza          VARCHAR(100)    NOT NULL,
     id_tipo_calificacion    INT             NOT NULL,
     CONSTRAINT fk_asignatura_tipocal FOREIGN KEY (id_tipo_calificacion) REFERENCES tipo_calificacion(id_tipo_calificacion)
 );
@@ -188,7 +188,7 @@ CREATE TABLE docente (
     id_docente          SERIAL          PRIMARY KEY,
     id_establecimiento  INT             NOT NULL,
     id_usuario          INT             NOT NULL,
-    id_categoria_sned   INT             NOT NULL,
+    id_categoria_sned   INT             ,
     anio_evaluacion_sned INT            NOT NULL,
     rut                 CHAR(8)         NOT NULL,
     dv                  CHAR(1)         NOT NULL,
@@ -300,7 +300,7 @@ CREATE TABLE curso (
     tipo_ensenianza     VARCHAR(100)    NOT NULL,
     modalidad           VARCHAR(100)    NOT NULL,
     anio_academico      INT             NOT NULL,
-    es_nivel_since      BOOLEAN         NOT NULL,
+    es_nivel_simce      BOOLEAN         NOT NULL,
     estado              VARCHAR(20)     NOT NULL,
     CONSTRAINT fk_curso_estab FOREIGN KEY (id_establecimiento) REFERENCES establecimiento(id_establecimiento)
 );
@@ -315,8 +315,12 @@ CREATE TABLE sala (
     capacidad           INT             NOT NULL,
     tipo                VARCHAR(50)     NOT NULL,
     piso                INT             NOT NULL,
-    estado              VARCHAR(20)     NOT NULL
+    estado              VARCHAR(20)     NOT NULL,
+    id_establecimiento  INT             NOT NULL,
+    CONSTRAINT fk_sala_estab FOREIGN KEY (id_establecimiento) REFERENCES establecimiento(id_establecimiento)
 );
+
+
 
 -- ============================================================
 -- DOCENTE_ASIGNATURA_CURSO
@@ -376,9 +380,9 @@ CREATE TABLE asistencia (
     id_horario          INT             NOT NULL,
     fecha               DATE            NOT NULL,
     estado_asistencia   VARCHAR(20)     NOT NULL,
-    hora_llegada        TIME            NOT NULL,
+    hora_llegada        TIME            ,
     justificada         BOOLEAN         NOT NULL,
-    observacion         TEXT            NOT NULL,
+    observacion         TEXT            ,
     CONSTRAINT fk_asist_est FOREIGN KEY (id_estudiante) REFERENCES estudiante(id_estudiante),
     CONSTRAINT fk_asist_hor FOREIGN KEY (id_horario)    REFERENCES horario(id_horario)
 );
@@ -394,7 +398,7 @@ CREATE TABLE anotacion (
     descripcion         TEXT            NOT NULL,
     fecha               DATE            NOT NULL,
     requiere_citacion   BOOLEAN         NOT NULL,
-    fecha_citacion      DATE            NOT NULL,
+    fecha_citacion      DATE            ,
     estado              VARCHAR(20)     NOT NULL,
     CONSTRAINT fk_anot_est FOREIGN KEY (id_estudiante) REFERENCES estudiante(id_estudiante),
     CONSTRAINT fk_anot_doc FOREIGN KEY (id_docente)    REFERENCES docente(id_docente)
@@ -421,7 +425,7 @@ CREATE TABLE evaluacion (
     id_docente          INT             NOT NULL,
     id_tipo_evaluacion  INT             NOT NULL,
     id_periodo          INT,
-    nombres             VARCHAR(200)    NOT NULL,
+    nombre              VARCHAR(200)    NOT NULL,
     ponderacion         NUMERIC(3,1)    NOT NULL,
     fecha               DATE            NOT NULL,
     descripcion         TEXT,
