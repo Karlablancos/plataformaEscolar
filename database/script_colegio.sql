@@ -380,9 +380,9 @@ CREATE TABLE asistencia (
     id_horario          INT             NOT NULL,
     fecha               DATE            NOT NULL,
     estado_asistencia   VARCHAR(20)     NOT NULL,
-    hora_llegada        TIME            NOT NULL,
+    hora_llegada        TIME            ,
     justificada         BOOLEAN         NOT NULL,
-    observacion         TEXT            NOT NULL,
+    observacion         TEXT            ,
     CONSTRAINT fk_asist_est FOREIGN KEY (id_estudiante) REFERENCES estudiante(id_estudiante),
     CONSTRAINT fk_asist_hor FOREIGN KEY (id_horario)    REFERENCES horario(id_horario)
 );
@@ -398,7 +398,7 @@ CREATE TABLE anotacion (
     descripcion         TEXT            NOT NULL,
     fecha               DATE            NOT NULL,
     requiere_citacion   BOOLEAN         NOT NULL,
-    fecha_citacion      DATE            NOT NULL,
+    fecha_citacion      DATE            ,
     estado              VARCHAR(20)     NOT NULL,
     CONSTRAINT fk_anot_est FOREIGN KEY (id_estudiante) REFERENCES estudiante(id_estudiante),
     CONSTRAINT fk_anot_doc FOREIGN KEY (id_docente)    REFERENCES docente(id_docente)
