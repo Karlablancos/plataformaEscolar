@@ -42,6 +42,7 @@ public class Asistencia {
     public LocalTime getHoraLlegada() { return horaLlegada; }
     public Boolean getJustificada() { return justificada; }
     public String getObservacion() { return observacion; }
+    public void setIdAsistencia(Integer v) { this.idAsistencia = v; }
     public void setIdEstudiante(Integer v) { this.idEstudiante = v; }
     public void setIdHorario(Integer v) { this.idHorario = v; }
     public void setFecha(LocalDate v) { this.fecha = v; }
