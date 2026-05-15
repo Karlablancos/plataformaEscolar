@@ -1,0 +1,7 @@
+com\colegio\bff\config\SecurityConfig.class
+com\colegio\bff\dto\LoginRequest.class
+com\colegio\bff\security\JwtFilter.class
+com\colegio\bff\security\JwtUtil.class
+com\colegio\bff\BffGatewayApplication.class
+com\colegio\bff\controller\AuthController.class
+com\colegio\bff\dto\LoginResponse.class

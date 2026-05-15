@@ -1,0 +1,7 @@
+C:\Users\lizbe\Proyectos\plataformaEscolar\bff-gateway\bff-gateway\src\main\java\com\colegio\bff\BffGatewayApplication.java
+C:\Users\lizbe\Proyectos\plataformaEscolar\bff-gateway\bff-gateway\src\main\java\com\colegio\bff\config\SecurityConfig.java
+C:\Users\lizbe\Proyectos\plataformaEscolar\bff-gateway\bff-gateway\src\main\java\com\colegio\bff\controller\AuthController.java
+C:\Users\lizbe\Proyectos\plataformaEscolar\bff-gateway\bff-gateway\src\main\java\com\colegio\bff\dto\LoginRequest.java
+C:\Users\lizbe\Proyectos\plataformaEscolar\bff-gateway\bff-gateway\src\main\java\com\colegio\bff\dto\LoginResponse.java
+C:\Users\lizbe\Proyectos\plataformaEscolar\bff-gateway\bff-gateway\src\main\java\com\colegio\bff\security\JwtFilter.java
+C:\Users\lizbe\Proyectos\plataformaEscolar\bff-gateway\bff-gateway\src\main\java\com\colegio\bff\security\JwtUtil.java
