@@ -1,7 +1,9 @@
 package com.colegio.establecimiento.model;
 
 import jakarta.persistence.*;
+import lombok.Setter;
 
+@Setter
 @Entity
 @Table(name = "establecimiento")
 public class Establecimiento {
