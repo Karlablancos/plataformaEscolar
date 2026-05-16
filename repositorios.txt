@@ -1,0 +1,30 @@
+REPOSITORIO PRINCIPAL
+URL: https://github.com/Karlablancos/plataformaEscolar
+Descripción: Repositorio principal del proyecto plataformaEscolar - 
+Colegio Bernardo O'Higgins. Contiene todos los componentes backend 
+(microservicios, BFF y base de datos).
+
+COMPONENTES BACKEND
+- microservicio-establecimiento (puerto 8082)
+  URL: https://github.com/Karlablancos/plataformaEscolar/tree/main/establecimiento
+  Descripción: Microservicio que gestiona los datos del establecimiento educacional.
+
+- microservicio-asistencia (puerto 8083)
+  URL: https://github.com/Karlablancos/plataformaEscolar/tree/main/asistencia
+  Descripción: Microservicio que registra y consulta la asistencia de estudiantes.
+
+- microservicio-usuario (puerto 8081)
+  URL: https://github.com/Karlablancos/plataformaEscolar/tree/main/usuario
+  Descripción: Microservicio de autenticación con login y BCrypt.
+
+- bff-gateway (puerto 8086)
+  URL: https://github.com/Karlablancos/plataformaEscolar/tree/main/bff-gateway
+  Descripción: Backend For Frontend con JWT y Spring Security. Orquesta las peticiones al frontend.
+
+COMPONENTE FRONTEND
+  URL: https://github.com/Karlablancos/plataformaEscolar/tree/main/frontend
+  Descripción: Componente frontend Vue.js 3 con TypeScript y Pinia.
+
+BASE DE DATOS
+  URL: https://github.com/Karlablancos/plataformaEscolar/tree/main/database
+  Descripción: Scripts SQL de creación y población de las 27 tablas PostgreSQL normalizadas en 3FN.
