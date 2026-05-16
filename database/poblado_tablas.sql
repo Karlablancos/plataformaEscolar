@@ -258,30 +258,18 @@ VALUES ('Binaria', 'Aprobado, Reprobado', false, 0.0);
 -- ============================================================
 -- ASIGNATURA (12)
 -- ============================================================
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Matemática', 'MAT001', 6, 'Media', 1);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Lenguaje y Comunicación', 'LEN001', 6, 'Media', 1);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Historia, Geografía y CS', 'HIS001', 4, 'Media', 1);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Educación Física', 'EDF001', 3, 'Media', 2);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Ciencias Naturales', 'CIE001', 4, 'Media', 1);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Inglés', 'ING001', 3, 'Media', 1);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Artes Visuales', 'ART001', 2, 'Media', 2);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Música', 'MUS001', 2, 'Media', 2);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Tecnología', 'TEC001', 2, 'Media', 1);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Filosofía', 'FIL001', 2, 'Media', 1);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Química', 'QUI001', 3, 'Media', 1);
-INSERT INTO asignatura (nombre, codigo, horas_semanales, tipo_ensenanza, id_tipo_calificacion)
-VALUES ('Física', 'FIS001', 3, 'Media', 1);
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Matemática', 'MAT001', 1, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Lenguaje y Comunicación', 'LEN001', 1, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Historia, Geografía y CS', 'HIS001', 1, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Educación Física', 'EDF001', 2, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Ciencias Naturales', 'CIE001', 1, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Inglés', 'ING001', 1, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Artes Visuales', 'ART001', 2, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Música', 'MUS001', 2, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Tecnología', 'TEC001', 1, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Filosofía', 'FIL001', 1, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Química', 'QUI001', 1, 'ACTIVO');
+INSERT INTO asignatura (id_establecimiento, nombre, codigo, id_tipo_calificacion, estado) VALUES (1, 'Física', 'FIS001', 1, 'ACTIVO');
 
 -- ============================================================
 -- PLAN_ESTUDIO (12)
@@ -477,20 +465,20 @@ INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimie
 INSERT INTO sala (numero, nombre, capacidad, tipo, piso, estado, id_establecimiento) VALUES (304, 'Biblioteca', 50, 'Biblioteca', 1, 'ACTIVO', 1);
 
 -- ============================================================
--- DOCENTE_ASIGNATURA_CURSO (12)
+-- CURSO_ASIGNATURA (12)
 -- ============================================================
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (1, 1, 1, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (2, 2, 1, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (3, 3, 1, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (4, 4, 1, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (1, 1, 2, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (2, 2, 2, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (3, 3, 2, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (4, 4, 2, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (1, 5, 3, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (2, 6, 3, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (3, 7, 4, 2026, 'ACTIVO');
-INSERT INTO docente_asignatura_curso (id_docente, id_asignatura, id_curso, anio_academico, estado) VALUES (4, 8, 4, 2026, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (1, 1, 1, 6, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (1, 2, 2, 6, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (1, 3, 3, 4, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (1, 4, 4, 3, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (2, 1, 1, 6, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (2, 2, 2, 6, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (2, 3, 3, 4, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (2, 4, 4, 3, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (3, 5, 1, 4, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (3, 6, 2, 3, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (4, 7, 3, 2, 'ACTIVO');
+INSERT INTO curso_asignatura (id_curso, id_asignatura, id_docente, horas_semanales, estado) VALUES (4, 8, 4, 2, 'ACTIVO');
 
 -- ============================================================
 -- HORARIO (12)

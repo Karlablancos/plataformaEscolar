@@ -148,11 +148,12 @@ CREATE TABLE tipo_calificacion (
 -- ============================================================
 CREATE TABLE asignatura (
     id_asignatura           SERIAL          PRIMARY KEY,
+    id_establecimiento      INT             NOT NULL,
     nombre                  VARCHAR(150)    NOT NULL,
     codigo                  VARCHAR(20)     NOT NULL,
-    horas_semanales         INT             NOT NULL,
-    tipo_ensenanza          VARCHAR(100)    NOT NULL,
     id_tipo_calificacion    INT             NOT NULL,
+    estado                  VARCHAR(20)     NOT NULL,
+    CONSTRAINT fk_asignatura_estab   FOREIGN KEY (id_establecimiento) REFERENCES establecimiento(id_establecimiento),
     CONSTRAINT fk_asignatura_tipocal FOREIGN KEY (id_tipo_calificacion) REFERENCES tipo_calificacion(id_tipo_calificacion)
 );
 
@@ -323,18 +324,18 @@ CREATE TABLE sala (
 
 
 -- ============================================================
--- DOCENTE_ASIGNATURA_CURSO
+-- CURSO_ASIGNATURA
 -- ============================================================
-CREATE TABLE docente_asignatura_curso (
-    id_docente_asignatura_curso SERIAL      PRIMARY KEY,
-    id_docente                  INT         NOT NULL,
-    id_asignatura               INT         NOT NULL,
-    id_curso                    INT         NOT NULL,
-    anio_academico              INT         NOT NULL,
-    estado                      VARCHAR(20) NOT NULL,
-    CONSTRAINT fk_dac_docente    FOREIGN KEY (id_docente)    REFERENCES docente(id_docente),
-    CONSTRAINT fk_dac_asignatura FOREIGN KEY (id_asignatura) REFERENCES asignatura(id_asignatura),
-    CONSTRAINT fk_dac_curso      FOREIGN KEY (id_curso)      REFERENCES curso(id_curso)
+CREATE TABLE curso_asignatura (
+    id_curso_asignatura     SERIAL          PRIMARY KEY,
+    id_curso                INT             NOT NULL,
+    id_asignatura           INT             NOT NULL,
+    id_docente              INT             NOT NULL,
+    horas_semanales         INT             NOT NULL,
+    estado                  VARCHAR(20)     NOT NULL,
+    CONSTRAINT fk_ca_curso      FOREIGN KEY (id_curso)      REFERENCES curso(id_curso),
+    CONSTRAINT fk_ca_asignatura FOREIGN KEY (id_asignatura) REFERENCES asignatura(id_asignatura),
+    CONSTRAINT fk_ca_docente    FOREIGN KEY (id_docente)    REFERENCES docente(id_docente)
 );
 
 -- ============================================================
