@@ -1,0 +1,134 @@
+:root {
+  --bs-primary: #686896;
+  --bs-primary-rgb: 104, 104, 150;
+
+  --bs-link-color: #686896;
+  --bs-link-hover-color: #575780;
+}
+
+.btn-primary {
+  background-color: #686896;
+  border-color: #686896;
+}
+
+.btn-primary:hover {
+  background-color: #575780;
+  border-color: #575780;
+}
+
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: #4a4a6d !important;
+  border-color: #4a4a6d !important;
+  box-shadow: 0 0 0 0.25rem rgba(104, 104, 150, 0.25);
+}
+
+.btn-outline-primary {
+  color: #686896;
+  border-color: #686896;
+}
+
+.btn-outline-primary:hover {
+  color: #fff;
+  background-color: #686896;
+  border-color: #686896;
+}
+
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  color: #fff !important;
+  background-color: #575780 !important;
+  border-color: #575780 !important;
+  box-shadow: 0 0 0 0.25rem rgba(104, 104, 150, 0.25);
+}
+
+.primary-color {
+  color: #686896;
+}
+
+.primary-color-light {
+  color: #9b9bbb;
+}
+
+.primary-color-light a:hover {
+  color: #fff;
+}
+
+a {
+  color: var(--bs-link-color);
+  text-decoration: underline;
+}
+
+body {
+  background-color: #f5f6f8;
+}
+
+.navbar-colegio {
+  background-color: #252536 !important;
+}
+
+.navbar-colegio .btn-outline-light {
+  border-radius: 50px;
+}
+
+.breadcrumb {
+  font-size: 0.9rem;
+}
+
+main.container {
+  background: #fff;
+  min-height: calc(100vh - 90px);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+  border: solid 1px #eef0f2;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.04);
+}
+
+.btn-rounded {
+  border-radius: 50px !important; /* Adjust to control the curve */
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+}
+
+.text-bg-success {
+  background: #e8f8ee !important;
+  color: #218b45 !important;
+}
+
+.text-bg-warning {
+  background: #fff5db !important;
+  color: #b77900 !important;
+}
+
+.btn-edit:hover {
+  background: #e8f8ee !important;
+  color: #218b45 !important;
+  box-shadow: 0 0 10px 10px rgba(0, 0, 0, 0.07);
+}
+
+.focus-mode {
+  border: 1px solid #eee !important;
+  box-shadow: 0 0 10px 4px rgba(104, 104, 150, 0.15) !important;
+  transition: all 0.2s ease;
+}
+
+.focus-mode h2 {
+  margin-top: 30px;
+}
+
+h1.page-title {
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+  margin: 0;
+}
+
+.page-header h1 {
+  color: #383859 !important;
+}
+
+.page-header p {
+  color: #555;
+}
