@@ -67,7 +67,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { establecimientoMock } from '../../data/establecimientoMock'
+import axios from 'axios'
 
 const router = useRouter()
 
@@ -76,36 +76,29 @@ const loading = ref(false)
 const error = ref('')
 const establecimientoEncontrado = ref(null)
 
-const normalizarRbd = (valor) => {
-  return String(valor).trim().toLowerCase().replace(/\./g, '').replace(/-/g, '').replace(/\s/g, '')
-}
-
-const buscarEstablecimiento = () => {
+const buscarEstablecimiento = async () => {
   error.value = ''
   loading.value = true
+  establecimientoEncontrado.value = null
 
-  setTimeout(() => {
-    const encontrado =
-      normalizarRbd(establecimientoMock.rbd) === normalizarRbd(rbd.value)
-        ? establecimientoMock
-        : null
-
-    if (!encontrado) {
-      establecimientoEncontrado.value = null
-      error.value = 'No se encontró un establecimiento con ese RBD.'
-      loading.value = false
-      return
+  try {
+    const rbdLimpio = rbd.value.trim().split('-')[0]
+    const response = await axios.get(`http://localhost:8080/auth/validar-rbd/${rbdLimpio}`)
+    
+    establecimientoEncontrado.value = {
+      nombre: response.data,
+      rbd: rbdLimpio
     }
 
-    establecimientoEncontrado.value = encontrado
-
-    localStorage.setItem('establecimientoActivo', JSON.stringify(encontrado))
-
-    loading.value = false
+    localStorage.setItem('establecimientoActivo', JSON.stringify(establecimientoEncontrado.value))
 
     setTimeout(() => {
       router.push('/login')
     }, 700)
-  }, 500)
+  } catch {
+    error.value = 'No se encontró un establecimiento con ese RBD.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
