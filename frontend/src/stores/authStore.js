@@ -1,7 +1,7 @@
 // src/stores/authStore.js
 
 import { defineStore } from 'pinia'
-import { usuariosMock } from '../data/mockData'
+import axios from 'axios'd
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -26,35 +26,38 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    login(email, password) {
-      const usuario = usuariosMock.find((u) => u.email === email && u.password === password)
+    async login(rbd, username, password) {
+      try {
+        const rbdLimpio = (rbd || '').split('-')[0]
 
-      if (!usuario) {
+        const response = await axios.post('http://localhost:8080/auth/login', {
+          rbd: rbdLimpio,
+          username,
+          password,
+        })
+
+        const data = response.data
+
+        this.token = data.token
+        this.user = {
+          username: data.username,
+          rol: data.rol,
+          establecimientoNombre: data.establecimientoNombre,
+          rbd: data.rbd,
+        }
+
+        localStorage.setItem('token', this.token)
+        localStorage.setItem('user', JSON.stringify(this.user))
+
+        return true
+      } catch (error) {
         return false
       }
-
-      this.token = 'fake-jwt-token'
-
-      this.user = {
-        id: usuario.id,
-        establecimientoId: usuario.establecimientoId,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        rol: usuario.rol,
-        docenteId: usuario.docenteId || null,
-        estado: usuario.estado,
-      }
-
-      localStorage.setItem('token', this.token)
-      localStorage.setItem('user', JSON.stringify(this.user))
-
-      return true
     },
 
     logout() {
       this.token = null
       this.user = null
-
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     },
