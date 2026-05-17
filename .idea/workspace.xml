@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a970176c-59de-48f6-8e75-14365d77f03b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/usuario/usuario/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/controller/UsuarioController.java" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/controller/UsuarioController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/repository/UsuarioRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/repository/UsuarioRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/service/UsuarioService.java" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/service/UsuarioService.java" afterDir="false" />
-    </list>
+    <list default="true" id="a970176c-59de-48f6-8e75-14365d77f03b" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,10 +28,10 @@
     <commands />
     <urls />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 5,
-  "fromUser": false
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3Dmg6nzIHNVH967o5e8cz0wySwu" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -56,7 +51,7 @@
     "Spring Boot.UsuarioApplication.executor": "Run",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "feature/microservicioUsuario",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
