@@ -39,9 +39,9 @@
 
                 <input
                   v-model="email"
-                  type="email"
+                  type="text"
                   class="form-control"
-                  placeholder="Correo electrónico"
+                  placeholder="Usuario"
                 />
               </div>
 
@@ -105,9 +105,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { usuariosMock } from '../data/mockData'
+import { useAuthStore } from '../stores/authStore'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
@@ -116,7 +117,7 @@ const showPassword = ref(false)
 
 const establecimiento = JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')
 
-const login = () => {
+const login = async () => {
   error.value = ''
 
   if (!establecimiento) {
@@ -126,38 +127,21 @@ const login = () => {
   }
 
   if (!email.value || !password.value) {
-    error.value = 'Ingresa correo electrónico y contraseña.'
+    error.value = 'Ingresa usuario y contraseña.'
     return
   }
 
-  const usuario = usuariosMock.find(
-    (item) =>
-      item.email.toLowerCase().trim() === email.value.toLowerCase().trim() &&
-      item.password === password.value &&
-      Number(item.establecimientoId) === Number(establecimiento.id_establecimiento),
-  )
+  const rbd = establecimiento.rbd || establecimiento.id_establecimiento?.toString()
+  const exito = await authStore.login(rbd, email.value, password.value)
 
-  if (!usuario) {
+  if (!exito) {
     error.value = 'Correo o contraseña incorrectos para este establecimiento.'
     return
   }
 
-  const user = {
-    id: usuario.id,
-    nombre: usuario.nombre,
-    correo: usuario.email,
-    rol: usuario.rol,
-    establecimiento,
-  }
-
-  const destino = usuario.rol === 'PROFESOR' ? '/profesor/dashboard' : '/admin/dashboard'
-
-  localStorage.setItem('token', 'fake-jwt-token')
-  localStorage.setItem('user', JSON.stringify(user))
-
-  router.replace(destino).then(() => {
-    window.location.reload()
-  })
+  const user = authStore.user
+  const destino = user?.rol === 'PROFESOR' ? '/profesor/dashboard' : '/admin/dashboard'
+  router.replace(destino)
 }
 
 const cambiarEstablecimiento = () => {
