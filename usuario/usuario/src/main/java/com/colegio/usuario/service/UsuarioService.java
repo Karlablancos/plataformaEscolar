@@ -5,7 +5,7 @@ import com.colegio.usuario.model.Usuario;
 import com.colegio.usuario.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -56,5 +56,20 @@ public class UsuarioService {
         dto.setBloqueado(usuario.getBloqueado());
         dto.setEstado(usuario.getEstado());
         return dto;
+    }
+
+    public Optional<UsuarioDTO> login(String username,
+                                      String password,
+                                      Integer idEstablecimiento) {
+        return usuarioRepository
+                .findByUsernameAndIdEstablecimiento(
+                        username, idEstablecimiento)
+                .filter(usuario -> {
+                    BCryptPasswordEncoder encoder =
+                            new BCryptPasswordEncoder();
+                    return encoder.matches(
+                            password, usuario.getPasswordHash());
+                })
+                .map(this::convertirADTO);
     }
 }

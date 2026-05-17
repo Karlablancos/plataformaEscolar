@@ -1,12 +1,14 @@
 package com.colegio.usuario.controller;
 
 import com.colegio.usuario.dto.UsuarioDTO;
+import com.colegio.usuario.dto.LoginRequest;
 import com.colegio.usuario.model.Usuario;
 import com.colegio.usuario.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.List;
 
@@ -39,5 +41,16 @@ public class UsuarioController {
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         usuarioService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/login")
+    public ResponseEntity<UsuarioDTO> login(
+            @RequestBody LoginRequest loginRequest) {
+        return usuarioService
+                .login(loginRequest.getUsername(),
+                        loginRequest.getPassword(),
+                        loginRequest.getIdEstablecimiento())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(
+                        HttpStatus.UNAUTHORIZED).build());
     }
 }
