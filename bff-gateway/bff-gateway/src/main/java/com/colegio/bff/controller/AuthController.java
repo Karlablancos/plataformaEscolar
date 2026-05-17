@@ -3,78 +3,75 @@ package com.colegio.bff.controller;
 import com.colegio.bff.dto.LoginRequest;
 import com.colegio.bff.dto.LoginResponse;
 import com.colegio.bff.security.JwtUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final JwtUtil jwtUtil;
+        private final JwtUtil jwtUtil;
+        private final WebClient webClient;
 
-    public AuthController(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
-    }
+        @Value("${microservicios.usuario-url}")
+        private String usuarioUrl;
 
-    // POST /auth/login
-    @PostMapping("/login")
-    public Mono<ResponseEntity<LoginResponse>> login(
-            @RequestBody LoginRequest request) {
-
-        // Validación básica de campos
-        if (request.getRbd() == null ||
-                request.getUsername() == null ||
-                request.getPassword() == null) {
-            return Mono.just(
-                    ResponseEntity.badRequest().build()
-            );
+        public AuthController(JwtUtil jwtUtil, WebClient.Builder builder) {
+                this.jwtUtil = jwtUtil;
+                this.webClient = builder.build();
         }
 
-        // Por ahora validamos con datos de prueba
-        // En producción llamaría a microservicio-establecimiento
-        // y microservicio-usuario
-        if (request.getRbd().equals("12345") &&
-                request.getUsername().equals("admin.bohiggins") &&
-                request.getPassword().equals("admin123")) {
+        @PostMapping("/login")
+        public Mono<ResponseEntity<LoginResponse>> login(
+                        @RequestBody LoginRequest request) {
 
-            String token = jwtUtil.generarToken(
-                    request.getUsername(),
-                    request.getRbd(),
-                    "ADMIN"
-            );
+                if (request.getRbd() == null ||
+                                request.getUsername() == null ||
+                                request.getPassword() == null) {
+                        return Mono.just(ResponseEntity.badRequest().build());
+                }
 
-            LoginResponse response = new LoginResponse(
-                    token,
-                    request.getUsername(),
-                    "ADMIN",
-                    "Colegio Bernardo O'Higgins",
-                    request.getRbd()
-            );
-
-            return Mono.just(ResponseEntity.ok(response));
+                return webClient.post()
+                                .uri(usuarioUrl + "/usuarios/login")
+                                .bodyValue(Map.of(
+                                                "username", request.getUsername(),
+                                                "password", request.getPassword(),
+                                                "idEstablecimiento", 1))
+                                .retrieve()
+                                .bodyToMono(Map.class)
+                                .map(usuario -> {
+                                        String token = jwtUtil.generarToken(
+                                                        request.getUsername(),
+                                                        request.getRbd(),
+                                                        "ADMIN");
+                                        LoginResponse response = new LoginResponse(
+                                                        token,
+                                                        request.getUsername(),
+                                                        "ADMIN",
+                                                        "Colegio Bernardo O'Higgins",
+                                                        request.getRbd());
+                                        return ResponseEntity.ok(response);
+                                })
+                                .onErrorReturn(
+                                                ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
         }
 
-        return Mono.just(
-                ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-        );
-    }
+        @Value("${microservicios.establecimiento-url}")
+        private String establecimientoUrl;
 
-    // GET /auth/validar-rbd/{rbd}
-    @GetMapping("/validar-rbd/{rbd}")
-    public Mono<ResponseEntity<String>> validarRbd(
-            @PathVariable String rbd) {
-
-        // Por ahora solo validamos el RBD de prueba
-        if (rbd.equals("12345")) {
-            return Mono.just(ResponseEntity.ok(
-                    "Colegio Bernardo O'Higgins"
-            ));
+        @GetMapping("/validar-rbd/{rbd}")
+        public Mono<ResponseEntity<String>> validarRbd(
+                        @PathVariable String rbd) {
+                return webClient.get()
+                                .uri(establecimientoUrl + "/establecimiento/rbd/" + rbd)
+                                .retrieve()
+                                .bodyToMono(Map.class)
+                                .map(e -> ResponseEntity.ok((String) e.get("nombre")))
+                                .onErrorReturn(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         }
-
-        return Mono.just(
-                ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-        );
-    }
 }

@@ -6,6 +6,10 @@ spring:
     name: bff-gateway
   main:
     web-application-type: reactive
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
   cloud:
     compatibility-verifier:
       enabled: false
@@ -25,6 +29,10 @@ spring:
               uri: http://asistencia-service:8083
               predicates:
                 - Path=/asistencias,/asistencias/**
+
+microservicios:
+  usuario-url: http://usuario-service:8081
+  establecimiento-url: http://establecimiento-service:8082
 
 management:
   endpoints:
