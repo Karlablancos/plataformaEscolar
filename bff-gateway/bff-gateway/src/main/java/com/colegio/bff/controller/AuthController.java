@@ -36,8 +36,8 @@ public class AuthController {
         // En producción llamaría a microservicio-establecimiento
         // y microservicio-usuario
         if (request.getRbd().equals("12345") &&
-                request.getUsername().equals("admin") &&
-                request.getPassword().equals("1234")) {
+                request.getUsername().equals("admin.bohiggins") &&
+                request.getPassword().equals("admin123")) {
 
             String token = jwtUtil.generarToken(
                     request.getUsername(),
