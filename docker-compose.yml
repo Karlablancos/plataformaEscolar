@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: colegio-postgres
+    environment:
+      POSTGRES_DB: colegio_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5432:5432"
+    volumes:
+      - colegio_postgres_data:/var/lib/postgresql/data
+      - ./database/script_colegio.sql:/docker-entrypoint-initdb.d/01-script.sql
+      - ./database/triggers_colegio.sql:/docker-entrypoint-initdb.d/02-triggers.sql
+      - ./database/poblado_tablas.sql:/docker-entrypoint-initdb.d/03-data.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d colegio_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  usuario-service:
+    build:
+      context: ./usuario/usuario
+    container_name: usuario-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/colegio_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 123456
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  establecimiento-service:
+    build:
+      context: ./establecimiento/establecimiento
+    container_name: establecimiento-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/colegio_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 123456
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  asistencia-service:
+    build:
+      context: ./asistencia/asistencia
+    container_name: asistencia-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/colegio_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 123456
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: libro-clases-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - usuario-service
+      - establecimiento-service
+      - asistencia-service
+
+volumes:
+  colegio_postgres_data:
