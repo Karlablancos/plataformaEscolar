@@ -61,6 +61,17 @@ services:
       postgres:
         condition: service_healthy
 
+  bff-gateway:
+    build:
+      context: ./bff-gateway/bff-gateway
+    container_name: bff-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - usuario-service
+      - establecimiento-service
+      - asistencia-service
+
   frontend:
     build:
       context: ./frontend

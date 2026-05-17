@@ -1,3 +1,33 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: bff-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    compatibility-verifier:
+      enabled: false
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: usuario-service
+              uri: http://usuario-service:8081
+              predicates:
+                - Path=/usuarios,/usuarios/**
+            - id: establecimiento-service
+              uri: http://establecimiento-service:8082
+              predicates:
+                - Path=/establecimientos,/establecimientos/**
+            - id: asistencia-service
+              uri: http://asistencia-service:8083
+              predicates:
+                - Path=/asistencias,/asistencias/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
