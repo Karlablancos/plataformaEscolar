@@ -39,12 +39,36 @@
               </RouterLink>
             </li>
 
-            <li class="nav-item" v-if="auth.isAdmin">
-              <RouterLink class="nav-link" to="/admin/profesores"> Profesores </RouterLink>
-            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Usuarios
+              </a>
 
-            <li class="nav-item" v-if="auth.isAdmin">
-              <RouterLink class="nav-link" to="/admin/alumnos"> Alumnos </RouterLink>
+              <ul class="dropdown-menu">
+                <li>
+                  <RouterLink class="dropdown-item" to="/admin/usuarios">
+                    Usuarios administrativos
+                  </RouterLink>
+                </li>
+
+                <li>
+                  <RouterLink class="dropdown-item" to="/admin/profesores">
+                    Profesores
+                  </RouterLink>
+                </li>
+
+                <li>
+                  <RouterLink class="dropdown-item" to="/admin/alumnos">
+                    Alumnos
+                  </RouterLink>
+                </li>
+              </ul>
             </li>
 
             <li class="nav-item">
@@ -66,7 +90,7 @@
           <small class="d-lg-none text-white mt-3 d-block">
             <span class="text-secondary">Hola! </span>
             <span class="primary-color-light">
-              {{ auth.user?.nombre }} ({{ auth.user?.rol }})
+              {{ auth.user?.username || auth.user?.nombre }} ({{ auth.user?.rol }})
             </span>
           </small>
         </div>

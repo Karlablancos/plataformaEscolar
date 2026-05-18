@@ -1,12 +1,20 @@
 // src/stores/authStore.js
 
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import api from '@/api/axios'
+
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null')
+  } catch {
+    return null
+  }
+}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token'),
-    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    user: getStoredUser(),
   }),
 
   getters: {
@@ -21,36 +29,51 @@ export const useAuthStore = defineStore('auth', {
     },
 
     establecimientoId: (state) => {
-      return state.user?.establecimientoId || null
+      return state.user?.establecimientoId || state.user?.idEstablecimiento || null
+    },
+
+    displayName: (state) => {
+      return state.user?.username || state.user?.nombre || 'Usuario'
     },
   },
 
   actions: {
     async login(rbd, username, password) {
       try {
-        const rbdLimpio = (rbd || '').split('-')[0]
+        const rbdLimpio = (rbd || localStorage.getItem('rbd') || '').split('-')[0]
 
-        const response = await axios.post('http://localhost:8080/auth/login', {
+        const { data } = await api.post('/auth/login', {
           rbd: rbdLimpio,
           username,
           password,
         })
 
-        const data = response.data
-
         this.token = data.token
+
         this.user = {
           username: data.username,
+          nombre: data.username,
           rol: data.rol,
-          establecimientoNombre: data.establecimientoNombre,
+          nombreColegio: data.nombreColegio,
+          establecimientoNombre: data.nombreColegio || data.establecimientoNombre,
           rbd: data.rbd,
+          establecimientoId: data.establecimientoId || data.idEstablecimiento || null,
         }
 
         localStorage.setItem('token', this.token)
         localStorage.setItem('user', JSON.stringify(this.user))
 
+        if (data.rbd) {
+          localStorage.setItem('rbd', data.rbd)
+        }
+
         return true
       } catch (error) {
+        console.error('Error login:', error)
+        this.token = null
+        this.user = null
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
         return false
       }
     },

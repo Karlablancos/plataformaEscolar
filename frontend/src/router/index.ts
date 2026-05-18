@@ -62,6 +62,11 @@ const routes = [
         component: EstablecimientoView,
       },
       {
+        path: 'usuarios',
+        name: 'usuarios',
+        component: () => import('@/views/usuarios/UsuariosView.vue'),
+      },
+      {
         path: 'alumnos',
         name: 'alumnos',
         component: AlumnosListView,

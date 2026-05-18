@@ -3,7 +3,10 @@ package com.colegio.usuario.controller;
 import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.LoginRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
+import com.colegio.usuario.dto.ActualizarUsuarioRequest;
 import com.colegio.usuario.service.UsuarioService;
+import com.colegio.usuario.dto.CambiarEstadoUsuarioRequest;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +37,15 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<UsuarioDTO> cambiarEstadoUsuario(
+            @PathVariable Integer id,
+            @RequestBody CambiarEstadoUsuarioRequest request
+    ) {
+        UsuarioDTO usuarioActualizado = usuarioService.cambiarEstadoUsuario(id, request.getEstado());
+        return ResponseEntity.ok(usuarioActualizado);
+    }
+
     @PostMapping
     public ResponseEntity<UsuarioDTO> crear(@RequestBody CrearUsuarioRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -44,6 +56,15 @@ public class UsuarioController {
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         usuarioService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioDTO> actualizarUsuario(
+            @PathVariable Integer id,
+            @RequestBody ActualizarUsuarioRequest request
+    ) {
+        UsuarioDTO usuarioActualizado = usuarioService.actualizarUsuario(id, request);
+        return ResponseEntity.ok(usuarioActualizado);
     }
 
     @PostMapping("/login")
