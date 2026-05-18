@@ -4,31 +4,30 @@ server:
 spring:
   application:
     name: bff-gateway
+
   main:
     web-application-type: reactive
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+
   cloud:
     compatibility-verifier:
       enabled: false
+
     gateway:
-      server:
-        webflux:
-          routes:
-            - id: usuario-service
-              uri: http://usuario-service:8081
-              predicates:
-                - Path=/usuarios,/usuarios/**
-            - id: establecimiento-service
-              uri: http://establecimiento-service:8082
-              predicates:
-                - Path=/establecimientos,/establecimientos/**
-            - id: asistencia-service
-              uri: http://asistencia-service:8083
-              predicates:
-                - Path=/asistencias,/asistencias/**
+      routes:
+        - id: usuario-service
+          uri: http://usuario-service:8081
+          predicates:
+            - Path=/usuarios,/usuarios/**
+
+        - id: establecimiento-service
+          uri: http://establecimiento-service:8082
+          predicates:
+            - Path=/establecimiento,/establecimiento/**
+
+        - id: asistencia-service
+          uri: http://asistencia-service:8083
+          predicates:
+            - Path=/asistencias,/asistencias/**
 
 microservicios:
   usuario-url: http://usuario-service:8081
@@ -43,6 +42,7 @@ resilience4j:
         wait-duration-in-open-state: 10s
         permitted-number-of-calls-in-half-open-state: 2
         automatic-transition-from-open-to-half-open-enabled: true
+
       establecimiento-service:
         sliding-window-size: 5
         failure-rate-threshold: 50

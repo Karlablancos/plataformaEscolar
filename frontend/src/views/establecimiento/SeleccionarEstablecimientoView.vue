@@ -83,13 +83,17 @@ const buscarEstablecimiento = async () => {
 
   try {
     const rbdLimpio = rbd.value.trim().split('-')[0]
+    if (!rbdLimpio) {
+      error.value = 'Ingresa el RBD del establecimiento.'
+      return
+    }
     const response = await axios.get(`http://localhost:8080/auth/validar-rbd/${rbdLimpio}`)
     
     establecimientoEncontrado.value = {
       nombre: response.data,
       rbd: rbdLimpio
     }
-
+    localStorage.setItem('rbd', rbdLimpio)
     localStorage.setItem('establecimientoActivo', JSON.stringify(establecimientoEncontrado.value))
 
     setTimeout(() => {
