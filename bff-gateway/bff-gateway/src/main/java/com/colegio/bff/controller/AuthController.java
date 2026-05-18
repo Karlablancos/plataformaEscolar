@@ -27,38 +27,43 @@ public class AuthController {
         }
 
         @PostMapping("/login")
-        public Mono<ResponseEntity<LoginResponse>> login(
-                        @RequestBody LoginRequest request) {
+        public Mono<ResponseEntity<LoginResponse>> login(@RequestBody LoginRequest request) {
 
-                if (request.getRbd() == null ||
-                                request.getUsername() == null ||
-                                request.getPassword() == null) {
+                if (request.getRbd() == null || request.getUsername() == null || request.getPassword() == null) {
                         return Mono.just(ResponseEntity.badRequest().build());
                 }
 
-                return webClient.post()
-                                .uri(usuarioUrl + "/usuarios/login")
-                                .bodyValue(Map.of(
-                                                "username", request.getUsername(),
-                                                "password", request.getPassword(),
-                                                "idEstablecimiento", 1))
+                return webClient.get()
+                                .uri(establecimientoUrl + "/establecimiento/rbd/" + request.getRbd())
                                 .retrieve()
                                 .bodyToMono(Map.class)
-                                .map(usuario -> {
-                                        String token = jwtUtil.generarToken(
-                                                        request.getUsername(),
-                                                        request.getRbd(),
-                                                        "ADMIN");
-                                        LoginResponse response = new LoginResponse(
-                                                        token,
-                                                        request.getUsername(),
-                                                        "ADMIN",
-                                                        "Colegio Bernardo O'Higgins",
-                                                        request.getRbd());
-                                        return ResponseEntity.ok(response);
+                                .flatMap(estab -> {
+                                        Integer idEstablecimiento = (Integer) estab.get("idEstablecimiento");
+                                        String nombreEstab = (String) estab.get("nombre");
+
+                                        return webClient.post()
+                                                        .uri(usuarioUrl + "/usuarios/login")
+                                                        .bodyValue(Map.of(
+                                                                        "username", request.getUsername(),
+                                                                        "password", request.getPassword(),
+                                                                        "idEstablecimiento", idEstablecimiento))
+                                                        .retrieve()
+                                                        .bodyToMono(Map.class)
+                                                        .map(usuario -> {
+                                                                String token = jwtUtil.generarToken(
+                                                                                request.getUsername(),
+                                                                                request.getRbd(),
+                                                                                "ADMIN");
+                                                                LoginResponse response = new LoginResponse(
+                                                                                token,
+                                                                                request.getUsername(),
+                                                                                "ADMIN",
+                                                                                nombreEstab,
+                                                                                request.getRbd());
+                                                                return ResponseEntity.ok(response);
+                                                        });
                                 })
-                                .onErrorReturn(
-                                                ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+                                .onErrorReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
         }
 
         @Value("${microservicios.establecimiento-url}")
