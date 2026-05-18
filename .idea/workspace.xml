@@ -5,7 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a970176c-59de-48f6-8e75-14365d77f03b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/bff-gateway/bff-gateway/src/main/java/com/colegio/bff/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/bff-gateway/bff-gateway/src/main/java/com/colegio/bff/controller/AuthController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/controller/UsuarioController.java" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/controller/UsuarioController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/repository/UsuarioRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/repository/UsuarioRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/service/UsuarioService.java" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/src/main/java/com/colegio/usuario/service/UsuarioService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usuario/usuario/src/test/java/com/colegio/usuario/service/UsuarioServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/usuario/usuario/src/test/java/com/colegio/usuario/service/UsuarioServiceTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,7 +74,7 @@
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "feat/crud-usuario",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",

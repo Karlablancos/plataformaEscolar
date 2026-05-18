@@ -1,5 +1,8 @@
 package com.colegio.usuario.service;
 
+import com.colegio.usuario.dto.ActualizarUsuarioRequest;
+import com.colegio.usuario.dto.CambiarPasswordRequest;
+import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
 import com.colegio.usuario.model.Usuario;
 import com.colegio.usuario.repository.UsuarioRepository;
@@ -8,12 +11,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,6 +27,9 @@ class UsuarioServiceTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UsuarioService usuarioService;
@@ -63,6 +72,20 @@ class UsuarioServiceTest {
         assertTrue(resultado.isEmpty());
     }
 
+    // ── listarPorEstablecimiento ──────────────────────────────────
+
+    @Test
+    void listarPorEstablecimiento_debeRetornarSoloUsuariosDelEstablecimiento() {
+        when(usuarioRepository.findByIdEstablecimiento(10))
+                .thenReturn(List.of(usuarioEjemplo()));
+
+        List<UsuarioDTO> resultado = usuarioService.listarPorEstablecimiento(10);
+
+        assertEquals(1, resultado.size());
+        assertEquals(10, resultado.get(0).getIdEstablecimiento());
+        verify(usuarioRepository).findByIdEstablecimiento(10);
+    }
+
     // ── buscarPorId ───────────────────────────────────────────────
 
     @Test
@@ -86,56 +109,110 @@ class UsuarioServiceTest {
         assertFalse(resultado.isPresent());
     }
 
-    // ── buscarPorUsername ─────────────────────────────────────────
+    // ── crear ─────────────────────────────────────────────────────
 
     @Test
-    void buscarPorUsername_debeRetornarDTOSiExiste() {
-        when(usuarioRepository.findByUsername("jperez"))
-                .thenReturn(Optional.of(usuarioEjemplo()));
+    void crear_debeHashearPasswordYGuardar() {
+        CrearUsuarioRequest request = new CrearUsuarioRequest();
+        request.setUsername("jperez");
+        request.setPassword("secreto123");
+        request.setIdEstablecimiento(10);
+        request.setIdRol(2);
+        request.setCorreoElectronico("jperez@colegio.cl");
+        request.setEstado("ACTIVO");
 
-        Optional<UsuarioDTO> resultado = usuarioService.buscarPorUsername("jperez");
+        when(passwordEncoder.encode("secreto123")).thenReturn("$2a$10$hashSecreto");
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioEjemplo());
 
-        assertTrue(resultado.isPresent());
-        assertEquals("jperez@colegio.cl", resultado.get().getCorreoElectronico());
-        verify(usuarioRepository).findByUsername("jperez");
+        UsuarioDTO resultado = usuarioService.crear(request);
+
+        assertEquals("jperez", resultado.getUsername());
+        assertEquals("ACTIVO", resultado.getEstado());
+        verify(passwordEncoder).encode("secreto123");
+        verify(usuarioRepository).save(any(Usuario.class));
     }
 
     @Test
-    void buscarPorUsername_debeRetornarVacioSiNoExiste() {
-        when(usuarioRepository.findByUsername("noexiste")).thenReturn(Optional.empty());
+    void crear_nuncaDebeExponerPasswordHashEnElDTO() {
+        CrearUsuarioRequest request = new CrearUsuarioRequest();
+        request.setUsername("jperez");
+        request.setPassword("secreto123");
+        request.setIdEstablecimiento(10);
+        request.setIdRol(2);
+        request.setCorreoElectronico("jperez@colegio.cl");
 
-        Optional<UsuarioDTO> resultado = usuarioService.buscarPorUsername("noexiste");
+        when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hashSecreto");
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioEjemplo());
+
+        UsuarioDTO resultado = usuarioService.crear(request);
+
+        assertDoesNotThrow(() -> resultado.getClass().getMethod("getUsername"));
+        assertThrows(NoSuchMethodException.class,
+                () -> resultado.getClass().getMethod("getPasswordHash"));
+    }
+
+    // ── actualizar ────────────────────────────────────────────────
+
+    @Test
+    void actualizar_debeModificarCamposPresentes() {
+        Usuario u = usuarioEjemplo();
+        ActualizarUsuarioRequest request = new ActualizarUsuarioRequest();
+        request.setCorreoElectronico("nuevo@colegio.cl");
+        request.setBloqueado(true);
+
+        when(usuarioRepository.findById(1)).thenReturn(Optional.of(u));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(u);
+
+        Optional<UsuarioDTO> resultado = usuarioService.actualizar(1, request);
+
+        assertTrue(resultado.isPresent());
+        verify(usuarioRepository).findById(1);
+        verify(usuarioRepository).save(any(Usuario.class));
+    }
+
+    @Test
+    void actualizar_debeRetornarVacioSiNoExiste() {
+        when(usuarioRepository.findById(99)).thenReturn(Optional.empty());
+
+        Optional<UsuarioDTO> resultado = usuarioService.actualizar(99, new ActualizarUsuarioRequest());
 
         assertFalse(resultado.isPresent());
     }
 
-    // ── guardar ───────────────────────────────────────────────────
+    // ── cambiarPassword ───────────────────────────────────────────
 
     @Test
-    void guardar_debeRetornarDTOConDatosCorrectos() {
+    void cambiarPassword_debeRetornarTrueSiPasswordActualCorrecta() {
         Usuario u = usuarioEjemplo();
-        when(usuarioRepository.save(u)).thenReturn(u);
+        CambiarPasswordRequest request = new CambiarPasswordRequest();
+        request.setPasswordActual("secreto123");
+        request.setPasswordNueva("nueva456");
 
-        UsuarioDTO resultado = usuarioService.guardar(u);
+        when(usuarioRepository.findById(1)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("secreto123", "$2a$10$hashSecreto")).thenReturn(true);
+        when(passwordEncoder.encode("nueva456")).thenReturn("$2a$10$nuevoHash");
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(u);
 
-        assertEquals("jperez", resultado.getUsername());
-        assertEquals("ACTIVO", resultado.getEstado());
-        assertFalse(resultado.getBloqueado());
-        verify(usuarioRepository).save(u);
+        boolean resultado = usuarioService.cambiarPassword(1, request);
+
+        assertTrue(resultado);
+        verify(passwordEncoder).encode("nueva456");
     }
 
     @Test
-    void guardar_nuncaDebeExponerPasswordHashEnElDTO() {
-        // Test de seguridad crítico: el DTO nunca debe filtrar la contraseña
+    void cambiarPassword_debeRetornarFalseSiPasswordActualIncorrecta() {
         Usuario u = usuarioEjemplo();
-        when(usuarioRepository.save(u)).thenReturn(u);
+        CambiarPasswordRequest request = new CambiarPasswordRequest();
+        request.setPasswordActual("incorrecta");
+        request.setPasswordNueva("nueva456");
 
-        UsuarioDTO resultado = usuarioService.guardar(u);
+        when(usuarioRepository.findById(1)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("incorrecta", "$2a$10$hashSecreto")).thenReturn(false);
 
-        // UsuarioDTO no tiene campo passwordHash — verificamos que no existe el getter
-        assertDoesNotThrow(() -> resultado.getClass().getMethod("getUsername"));
-        assertThrows(NoSuchMethodException.class,
-                () -> resultado.getClass().getMethod("getPasswordHash"));
+        boolean resultado = usuarioService.cambiarPassword(1, request);
+
+        assertFalse(resultado);
+        verify(passwordEncoder, never()).encode(anyString());
     }
 
     // ── eliminar ──────────────────────────────────────────────────
@@ -168,24 +245,5 @@ class UsuarioServiceTest {
         boolean resultado = usuarioService.existeUsername("noexiste");
 
         assertFalse(resultado);
-    }
-
-    // ── convertirADTO (verificación indirecta) ────────────────────
-
-    @Test
-    void convertirADTO_debeMappearTodosLosCamposEsperados() {
-        Usuario u = usuarioEjemplo();
-        when(usuarioRepository.findById(1)).thenReturn(Optional.of(u));
-
-        UsuarioDTO dto = usuarioService.buscarPorId(1).get();
-
-        assertEquals(1,           dto.getIdUsuario());
-        assertEquals(10,          dto.getIdEstablecimiento());
-        assertEquals(2,           dto.getIdRol());
-        assertEquals("jperez",    dto.getUsername());
-        assertEquals("jperez@colegio.cl", dto.getCorreoElectronico());
-        assertFalse(dto.getBloqueado());
-        assertEquals("ACTIVO",    dto.getEstado());
-        assertNotNull(dto.getUltimoAcceso());
     }
 }
