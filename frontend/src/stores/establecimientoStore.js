@@ -1,59 +1,35 @@
 import { defineStore } from 'pinia'
-import { establecimientoMock } from '../data'
+import axios from 'axios'
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId } from './shared/helpers'
 
+const API_URL = 'http://localhost:8080'
+
+const mapEstablecimiento = (data) => ({
+  id_establecimiento: data.idEstablecimiento,
+  rbd: data.rbd,
+  nombre: data.nombre,
+  id_tipo_estab: data.idTipoEstab ?? 1,
+  sostenedor: data.sostenedor ?? '',
+  director: data.director ?? '',
+  calle: data.calle ?? '',
+  numero: data.numero ?? '',
+  id_comuna: data.idComuna ?? 1,
+  telefono: data.telefono ?? '',
+  correo_electronico: data.correoElectronico ?? '',
+  modo_aula: data.modoAula ?? 'NORMAL',
+  estado: data.estado ?? 'ACTIVO',
+})
+
 export const useEstablecimientoStore = defineStore('establecimiento', {
   state: () => ({
-    establecimiento: loadFromStorage('establecimiento', establecimientoMock),
+    establecimiento: loadFromStorage('establecimiento', null),
+    loading: false,
+    error: null,
   }),
 
   getters: {
-    establecimientoActivo: (state) => {
-      const establecimientoId = Number(getEstablecimientoId())
-
-      if (!establecimientoId) return state.establecimiento
-
-      if (Array.isArray(state.establecimiento)) {
-        return (
-          state.establecimiento.find((item) => {
-            const itemId = Number(item.id_establecimiento ?? item.establecimientoId ?? item.id)
-            return itemId === establecimientoId
-          }) || null
-        )
-      }
-
-      const itemId = Number(
-        state.establecimiento.id_establecimiento ??
-          state.establecimiento.establecimientoId ??
-          state.establecimiento.id,
-      )
-
-      return itemId === establecimientoId ? state.establecimiento : null
-    },
-
-    getEstablecimientoById: (state) => {
-      return (id) => {
-        const idNumber = Number(id)
-
-        if (Array.isArray(state.establecimiento)) {
-          return (
-            state.establecimiento.find((item) => {
-              const itemId = Number(item.id_establecimiento ?? item.establecimientoId ?? item.id)
-              return itemId === idNumber
-            }) || null
-          )
-        }
-
-        const establecimientoId = Number(
-          state.establecimiento.id_establecimiento ??
-            state.establecimiento.establecimientoId ??
-            state.establecimiento.id,
-        )
-
-        return establecimientoId === idNumber ? state.establecimiento : null
-      }
-    },
+    establecimientoActivo: (state) => state.establecimiento,
   },
 
   actions: {
@@ -61,41 +37,38 @@ export const useEstablecimientoStore = defineStore('establecimiento', {
       saveToStorage('establecimiento', this.establecimiento)
     },
 
+    async cargarPorRbd(rbd) {
+      try {
+        this.loading = true
+        this.error = null
+
+        const { data } = await axios.get(`${API_URL}/establecimiento/rbd/${rbd}`)
+
+        this.establecimiento = mapEstablecimiento(data)
+        this.persistir()
+
+        return this.establecimiento
+      } catch (error) {
+        this.error = error
+        console.error('Error cargando establecimiento:', error)
+        return null
+      } finally {
+        this.loading = false
+      }
+    },
+
     actualizarEstablecimiento(data) {
-      const establecimientoId = Number(
-        data.id_establecimiento ?? data.establecimientoId ?? data.id ?? getEstablecimientoId(),
-      )
-
-      if (Array.isArray(this.establecimiento)) {
-        const index = this.establecimiento.findIndex((item) => {
-          const itemId = Number(item.id_establecimiento ?? item.establecimientoId ?? item.id)
-          return itemId === establecimientoId
-        })
-
-        if (index === -1) return
-
-        this.establecimiento[index] = {
-          ...this.establecimiento[index],
-          ...data,
-          id_establecimiento: establecimientoId,
-        }
-      } else {
-        this.establecimiento = {
-          ...this.establecimiento,
-          ...data,
-          id_establecimiento: establecimientoId,
-        }
+      this.establecimiento = {
+        ...this.establecimiento,
+        ...data,
       }
 
       this.persistir()
     },
 
     resetData() {
-      this.establecimiento = Array.isArray(establecimientoMock)
-        ? establecimientoMock.map((item) => ({ ...item }))
-        : { ...establecimientoMock }
-
-      this.persistir()
+      this.establecimiento = null
+      localStorage.removeItem('establecimiento')
     },
   },
 })
