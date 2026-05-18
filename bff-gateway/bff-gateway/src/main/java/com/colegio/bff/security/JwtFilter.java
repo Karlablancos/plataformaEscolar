@@ -17,7 +17,8 @@ public class JwtFilter implements WebFilter {
     // Rutas públicas — no necesitan token
     private final List<String> RUTAS_PUBLICAS = List.of(
             "/auth/login",
-            "/auth/validar-rbd"
+            "/auth/validar-rbd",
+            "/actuator"
     );
 
     public JwtFilter(JwtUtil jwtUtil) {

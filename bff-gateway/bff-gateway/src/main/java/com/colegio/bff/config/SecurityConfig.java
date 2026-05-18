@@ -8,6 +8,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
 import java.util.List;
 
 @Configuration
@@ -15,15 +16,14 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public SecurityWebFilterChain filterChain(
-            ServerHttpSecurity http) {
+    public SecurityWebFilterChain filterChain(ServerHttpSecurity http) {
         return http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(
-                        corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeExchange(auth -> auth
                         .pathMatchers("/auth/**").permitAll()
-                        .anyExchange().authenticated()
+                        .pathMatchers("/actuator/**").permitAll()
+                        .anyExchange().permitAll()
                 )
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
@@ -33,16 +33,23 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+
         config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        );
+        config.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
+        ));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 }

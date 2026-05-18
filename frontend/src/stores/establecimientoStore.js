@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import api from '@/api/axios'
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId } from './shared/helpers'
 
@@ -42,7 +42,7 @@ export const useEstablecimientoStore = defineStore('establecimiento', {
         this.loading = true
         this.error = null
 
-        const { data } = await axios.get(`${API_URL}/establecimiento/rbd/${rbd}`)
+        const { data } = await api.get(`/establecimiento/rbd/${rbd}`)
 
         this.establecimiento = mapEstablecimiento(data)
         this.persistir()
