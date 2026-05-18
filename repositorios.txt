@@ -17,7 +17,7 @@ COMPONENTES BACKEND
   URL: https://github.com/Karlablancos/plataformaEscolar/tree/main/usuario
   Descripción: Microservicio de autenticación con login y BCrypt.
 
-- bff-gateway (puerto 8086)
+- bff-gateway (puerto 8080)
   URL: https://github.com/Karlablancos/plataformaEscolar/tree/main/bff-gateway
   Descripción: Backend For Frontend con JWT y Spring Security. Orquesta las peticiones al frontend.
 
