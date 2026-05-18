@@ -1,13 +1,19 @@
 package com.colegio.usuario.service;
 
+import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
+import com.colegio.usuario.factory.UsuarioFactory;
 import com.colegio.usuario.model.Usuario;
 import com.colegio.usuario.repository.UsuarioRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -15,9 +21,28 @@ import java.util.stream.Collectors;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final List<UsuarioFactory> factoryList;
+
+    private Map<Integer, UsuarioFactory> factories;
+
+    @PostConstruct
+    void initFactories() {
+        factories = factoryList.stream()
+                .collect(Collectors.toMap(UsuarioFactory::getIdRol, Function.identity()));
+        // roles 3 y 4 usan la misma factory de Apoderado
+        factories.putIfAbsent(4, factories.get(3));
+    }
 
     public List<UsuarioDTO> listarTodos() {
         return usuarioRepository.findAll()
+                .stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<UsuarioDTO> listarPorEstablecimiento(Integer idEstablecimiento) {
+        return usuarioRepository.findByIdEstablecimiento(idEstablecimiento)
                 .stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
@@ -33,7 +58,9 @@ public class UsuarioService {
                 .map(this::convertirADTO);
     }
 
-    public UsuarioDTO guardar(Usuario usuario) {
+    public UsuarioDTO crear(CrearUsuarioRequest request) {
+        UsuarioFactory factory = factories.getOrDefault(request.getIdRol(), factories.get(1));
+        Usuario usuario = factory.crearUsuario(request, passwordEncoder);
         return convertirADTO(usuarioRepository.save(usuario));
     }
 
@@ -43,6 +70,15 @@ public class UsuarioService {
 
     public boolean existeUsername(String username) {
         return usuarioRepository.existsByUsername(username);
+    }
+
+    public Optional<UsuarioDTO> login(String username,
+                                      String password,
+                                      Integer idEstablecimiento) {
+        return usuarioRepository
+                .findByUsernameAndIdEstablecimiento(username, idEstablecimiento)
+                .filter(u -> passwordEncoder.matches(password, u.getPasswordHash()))
+                .map(this::convertirADTO);
     }
 
     private UsuarioDTO convertirADTO(Usuario usuario) {
@@ -56,20 +92,5 @@ public class UsuarioService {
         dto.setBloqueado(usuario.getBloqueado());
         dto.setEstado(usuario.getEstado());
         return dto;
-    }
-
-    public Optional<UsuarioDTO> login(String username,
-                                      String password,
-                                      Integer idEstablecimiento) {
-        return usuarioRepository
-                .findByUsernameAndIdEstablecimiento(
-                        username, idEstablecimiento)
-                .filter(usuario -> {
-                    BCryptPasswordEncoder encoder =
-                            new BCryptPasswordEncoder();
-                    return encoder.matches(
-                            password, usuario.getPasswordHash());
-                })
-                .map(this::convertirADTO);
     }
 }
