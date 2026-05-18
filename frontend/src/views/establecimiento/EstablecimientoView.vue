@@ -6,12 +6,20 @@
         <p class="page-subtitle">Configuración institucional del libro de clases digital.</p>
       </div>
 
-      <button v-if="!modoEdicion" class="btn btn-success btn-rounded" @click="activarEdicion">
+      <button
+        v-if="!modoEdicion"
+        class="btn btn-success btn-rounded"
+        @click="activarEdicion"
+      >
         <i class="bi bi-pencil"></i> Editar información
       </button>
     </div>
 
-    <div class="row g-4">
+    <div v-if="loading" class="alert alert-info">
+      <i class="bi bi-hourglass-split"></i> Cargando información del establecimiento...
+    </div>
+
+    <div v-else class="row g-4">
       <!-- SIDEBAR -->
       <div class="col-lg-4">
         <div class="card border-0 shadow-0 mb-4">
@@ -25,12 +33,12 @@
 
             <div class="summary-item">
               <span>Modo aula</span>
-              <strong>{{ form.modo_aula }}</strong>
+              <strong>{{ form.modo_aula || 'No informado' }}</strong>
             </div>
 
             <div class="summary-item">
               <span>Estado</span>
-              <strong>{{ form.estado }}</strong>
+              <strong>{{ form.estado || 'No informado' }}</strong>
             </div>
 
             <div class="summary-item">
@@ -45,12 +53,14 @@
             <h3 class="sidebar-title">Configuración académica</h3>
 
             <div class="alert alert-info border mb-0">
-              <i class="bi bi-info-circle"></i> El <strong>modo aula</strong> define la estructura
-              temporal del establecimiento (semestral, trimestral o anual).
+              <i class="bi bi-info-circle"></i>
+              El <strong>modo aula</strong> define la estructura temporal del
+              establecimiento (semestral, trimestral o anual).
             </div>
           </div>
         </div>
       </div>
+
       <!-- INFORMACIÓN PRINCIPAL -->
       <div class="col-lg-8">
         <div class="card border-0 shadow-0" :class="{ 'focus-mode': modoEdicion }">
@@ -83,7 +93,11 @@
 
                 <div class="col-md-6">
                   <label class="form-label">Tipo establecimiento</label>
-                  <select v-model="form.id_tipo_estab" class="form-select" :disabled="!modoEdicion">
+                  <select
+                    v-model="form.id_tipo_estab"
+                    class="form-select"
+                    :disabled="!modoEdicion"
+                  >
                     <option :value="1">Municipal</option>
                     <option :value="2">Particular subvencionado</option>
                     <option :value="3">Particular pagado</option>
@@ -93,9 +107,13 @@
 
                 <div class="col-md-6">
                   <label class="form-label">Estado</label>
-                  <select v-model="form.estado" class="form-select" :disabled="!modoEdicion">
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
+                  <select
+                    v-model="form.estado"
+                    class="form-select"
+                    :disabled="!modoEdicion"
+                  >
+                    <option value="ACTIVO">Activo</option>
+                    <option value="INACTIVO">Inactivo</option>
                   </select>
                 </div>
 
@@ -141,7 +159,11 @@
 
                 <div class="col-md-6">
                   <label class="form-label">Comuna</label>
-                  <select v-model="form.id_comuna" class="form-select" :disabled="!modoEdicion">
+                  <select
+                    v-model="form.id_comuna"
+                    class="form-select"
+                    :disabled="!modoEdicion"
+                  >
                     <option :value="1">Santiago</option>
                     <option :value="2">Providencia</option>
                     <option :value="3">Ñuñoa</option>
@@ -152,10 +174,15 @@
 
                 <div class="col-md-6">
                   <label class="form-label">Modo aula</label>
-                  <select v-model="form.modo_aula" class="form-select" :disabled="!modoEdicion">
-                    <option value="Semestral">Semestral</option>
-                    <option value="Trimestral">Trimestral</option>
-                    <option value="Anual">Anual</option>
+                  <select
+                    v-model="form.modo_aula"
+                    class="form-select"
+                    :disabled="!modoEdicion"
+                  >
+                    <option value="NORMAL">Normal</option>
+                    <option value="SEMESTRAL">Semestral</option>
+                    <option value="TRIMESTRAL">Trimestral</option>
+                    <option value="ANUAL">Anual</option>
                   </select>
                 </div>
 
@@ -181,11 +208,17 @@
               </div>
 
               <div v-if="modoEdicion" class="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" class="btn btn-danger btn-rounded" @click="cancelarEdicion">
+                <button
+                  type="button"
+                  class="btn btn-danger btn-rounded"
+                  @click="cancelarEdicion"
+                >
                   Cancelar
                 </button>
 
-                <button type="submit" class="btn btn-success btn-rounded">Guardar cambios</button>
+                <button type="submit" class="btn btn-success btn-rounded">
+                  Guardar cambios
+                </button>
               </div>
             </form>
           </div>
@@ -196,15 +229,16 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import { useAcademicStore } from '@/stores/academicStore'
+import { reactive, ref, onMounted } from 'vue'
+import { useEstablecimientoStore } from '@/stores/establecimientoStore'
 
-const academicStore = useAcademicStore()
+const establecimientoStore = useEstablecimientoStore()
 
 const modoEdicion = ref(false)
+const loading = ref(false)
 
 const getEstablecimiento = () => {
-  return academicStore.establecimientoActivo || academicStore.establecimiento || {}
+  return establecimientoStore.establecimientoActivo || {}
 }
 
 const form = reactive({
@@ -219,9 +253,22 @@ const form = reactive({
   id_comuna: 1,
   telefono: '',
   correo_electronico: '',
-  modo_aula: 'Semestral',
-  estado: 'Activo',
-  ...getEstablecimiento(),
+  modo_aula: 'NORMAL',
+  estado: 'ACTIVO',
+})
+
+onMounted(async () => {
+  if (!establecimientoStore.establecimientoActivo) {
+    const rbd = localStorage.getItem('rbd')
+
+    if (rbd) {
+      loading.value = true
+      await establecimientoStore.cargarPorRbd(rbd)
+      loading.value = false
+    }
+  }
+
+  Object.assign(form, getEstablecimiento())
 })
 
 const activarEdicion = () => {
@@ -234,7 +281,7 @@ const cancelarEdicion = () => {
 }
 
 const guardarCambios = () => {
-  academicStore.actualizarEstablecimiento({ ...form })
+  establecimientoStore.actualizarEstablecimiento({ ...form })
   modoEdicion.value = false
 }
 </script>
