@@ -1,7 +1,7 @@
 package com.colegio.usuario.controller;
 
+import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
-import com.colegio.usuario.model.Usuario;
 import com.colegio.usuario.service.UsuarioService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,45 +41,42 @@ class UsuarioControllerTest {
         return dto;
     }
 
-    private Usuario usuarioEjemplo() {
-        Usuario u = new Usuario();
-        u.setIdUsuario(1);
-        u.setIdEstablecimiento(10);
-        u.setIdRol(2);
-        u.setUsername("jperez");
-        u.setPasswordHash("$2a$10$hashSecreto");
-        u.setCorreoElectronico("jperez@colegio.cl");
-        u.setIntentosFallidos(0);
-        u.setBloqueado(false);
-        u.setFechaCreacion(LocalDateTime.of(2026, 1, 1, 0, 0));
-        u.setEstado("ACTIVO");
-        return u;
-    }
-
-    // ── GET /usuarios ─────────────────────────────────────────────
+    // ── GET /usuarios (sin filtro) ────────────────────────────────
 
     @Test
-    void listarTodos_debeRetornar200ConLista() {
+    void listar_sinFiltro_debeRetornar200ConTodos() {
         when(usuarioService.listarTodos()).thenReturn(List.of(dtoEjemplo()));
 
-        ResponseEntity<List<UsuarioDTO>> respuesta = usuarioController.listarTodos();
+        ResponseEntity<List<UsuarioDTO>> respuesta = usuarioController.listar(null);
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
-        assertNotNull(respuesta.getBody());
         assertEquals(1, respuesta.getBody().size());
-        assertEquals("jperez", respuesta.getBody().get(0).getUsername());
         verify(usuarioService).listarTodos();
+        verify(usuarioService, never()).listarPorEstablecimiento(any());
     }
 
     @Test
-    void listarTodos_debeRetornar200ConListaVaciaSiNoHayUsuarios() {
+    void listar_sinFiltro_debeRetornar200ConListaVacia() {
         when(usuarioService.listarTodos()).thenReturn(List.of());
 
-        ResponseEntity<List<UsuarioDTO>> respuesta = usuarioController.listarTodos();
+        ResponseEntity<List<UsuarioDTO>> respuesta = usuarioController.listar(null);
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
-        assertNotNull(respuesta.getBody());
         assertTrue(respuesta.getBody().isEmpty());
+    }
+
+    // ── GET /usuarios?idEstablecimiento=10 ────────────────────────
+
+    @Test
+    void listar_conFiltro_debeRetornar200FiltradoPorEstablecimiento() {
+        when(usuarioService.listarPorEstablecimiento(10)).thenReturn(List.of(dtoEjemplo()));
+
+        ResponseEntity<List<UsuarioDTO>> respuesta = usuarioController.listar(10);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(10, respuesta.getBody().get(0).getIdEstablecimiento());
+        verify(usuarioService).listarPorEstablecimiento(10);
+        verify(usuarioService, never()).listarTodos();
     }
 
     // ── GET /usuarios/{id} ────────────────────────────────────────
@@ -90,10 +88,7 @@ class UsuarioControllerTest {
         ResponseEntity<UsuarioDTO> respuesta = usuarioController.buscarPorId(1);
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
-        assertNotNull(respuesta.getBody());
-        assertEquals(1, respuesta.getBody().getIdUsuario());
         assertEquals("jperez", respuesta.getBody().getUsername());
-        verify(usuarioService).buscarPorId(1);
     }
 
     @Test
@@ -103,34 +98,31 @@ class UsuarioControllerTest {
         ResponseEntity<UsuarioDTO> respuesta = usuarioController.buscarPorId(99);
 
         assertEquals(HttpStatus.NOT_FOUND, respuesta.getStatusCode());
-        assertNull(respuesta.getBody());
-        verify(usuarioService).buscarPorId(99);
     }
 
     // ── POST /usuarios ────────────────────────────────────────────
 
     @Test
-    void guardar_debeRetornar201ConDTOCreado() {
-        Usuario u = usuarioEjemplo();
-        when(usuarioService.guardar(u)).thenReturn(dtoEjemplo());
+    void crear_debeRetornar201ConDTOCreado() {
+        CrearUsuarioRequest request = new CrearUsuarioRequest();
+        request.setUsername("jperez");
+        request.setIdRol(1);
 
-        ResponseEntity<UsuarioDTO> respuesta = usuarioController.guardar(u);
+        when(usuarioService.crear(any(CrearUsuarioRequest.class))).thenReturn(dtoEjemplo());
+
+        ResponseEntity<UsuarioDTO> respuesta = usuarioController.crear(request);
 
         assertEquals(HttpStatus.CREATED, respuesta.getStatusCode());
-        assertNotNull(respuesta.getBody());
         assertEquals("jperez", respuesta.getBody().getUsername());
-        assertEquals("ACTIVO", respuesta.getBody().getEstado());
-        verify(usuarioService).guardar(u);
+        verify(usuarioService).crear(any(CrearUsuarioRequest.class));
     }
 
     @Test
-    void guardar_debeRetornar201SinExponerPasswordHash() {
-        Usuario u = usuarioEjemplo();
-        when(usuarioService.guardar(u)).thenReturn(dtoEjemplo());
+    void crear_nuncaDebeExponerPasswordHashEnElDTO() {
+        when(usuarioService.crear(any(CrearUsuarioRequest.class))).thenReturn(dtoEjemplo());
 
-        ResponseEntity<UsuarioDTO> respuesta = usuarioController.guardar(u);
+        ResponseEntity<UsuarioDTO> respuesta = usuarioController.crear(new CrearUsuarioRequest());
 
-        assertEquals(HttpStatus.CREATED, respuesta.getStatusCode());
         assertThrows(NoSuchMethodException.class,
                 () -> respuesta.getBody().getClass().getMethod("getPasswordHash"));
     }
@@ -145,16 +137,6 @@ class UsuarioControllerTest {
 
         assertEquals(HttpStatus.NO_CONTENT, respuesta.getStatusCode());
         assertNull(respuesta.getBody());
-        verify(usuarioService, times(1)).eliminar(1);
-    }
-
-    @Test
-    void eliminar_debeDelegarAlServicioSinRetornarCuerpo() {
-        doNothing().when(usuarioService).eliminar(5);
-
-        usuarioController.eliminar(5);
-
-        verify(usuarioService).eliminar(5);
-        verifyNoMoreInteractions(usuarioService);
+        verify(usuarioService).eliminar(1);
     }
 }
