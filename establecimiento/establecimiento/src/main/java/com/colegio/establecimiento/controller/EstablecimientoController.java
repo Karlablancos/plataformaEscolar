@@ -22,10 +22,15 @@ public class EstablecimientoController {
                     dto.setIdEstablecimiento(e.getIdEstablecimiento());
                     dto.setRbd(e.getRbd());
                     dto.setNombre(e.getNombre());
+                    dto.setIdTipoEstab(e.getIdTipoEstab());
                     dto.setSostenedor(e.getSostenedor());
                     dto.setDirector(e.getDirector());
+                    dto.setCalle(e.getCalle());
+                    dto.setNumero(e.getNumero());
+                    dto.setIdComuna(e.getIdComuna());
                     dto.setCorreoElectronico(e.getCorreoElectronico());
                     dto.setTelefono(e.getTelefono());
+                    dto.setModoAula(e.getModoAula());
                     dto.setEstado(e.getEstado());
                     return ResponseEntity.ok(dto);
                 })
