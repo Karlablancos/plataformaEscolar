@@ -4,6 +4,7 @@ import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
 import com.colegio.usuario.factory.UsuarioFactory;
 import com.colegio.usuario.model.Usuario;
+import com.colegio.usuario.dto.ActualizarUsuarioRequest;
 import com.colegio.usuario.repository.UsuarioRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -64,6 +65,21 @@ public class UsuarioService {
         return convertirADTO(usuarioRepository.save(usuario));
     }
 
+    public UsuarioDTO cambiarEstadoUsuario(Integer idUsuario, String estado) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (!"ACTIVO".equalsIgnoreCase(estado) && !"INACTIVO".equalsIgnoreCase(estado)) {
+            throw new RuntimeException("Estado inválido");
+        }
+
+        usuario.setEstado(estado.toUpperCase());
+
+        Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+        return convertirADTO(usuarioActualizado);
+    }
+
     public void eliminar(Integer id) {
         usuarioRepository.deleteById(id);
     }
@@ -92,5 +108,35 @@ public class UsuarioService {
         dto.setBloqueado(usuario.getBloqueado());
         dto.setEstado(usuario.getEstado());
         return dto;
+    }
+    public UsuarioDTO actualizarUsuario(Integer idUsuario, ActualizarUsuarioRequest request) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            usuario.setUsername(request.getUsername().trim());
+        }
+
+        if (request.getCorreoElectronico() != null && !request.getCorreoElectronico().isBlank()) {
+            usuario.setCorreoElectronico(request.getCorreoElectronico().trim());
+        }
+
+        if (request.getIdRol() != null) {
+            usuario.setIdRol(request.getIdRol());
+        }
+
+        if (request.getEstado() != null && !request.getEstado().isBlank()) {
+            String estado = request.getEstado().toUpperCase();
+
+            if (!estado.equals("ACTIVO") && !estado.equals("INACTIVO")) {
+                throw new RuntimeException("Estado inválido");
+            }
+
+            usuario.setEstado(estado);
+        }
+
+        Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+        return convertirADTO(usuarioActualizado);
     }
 }
