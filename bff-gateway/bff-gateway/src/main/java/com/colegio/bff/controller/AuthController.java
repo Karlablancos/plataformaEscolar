@@ -77,16 +77,21 @@ public class AuthController {
 
     @CircuitBreaker(name = "establecimiento-service", fallbackMethod = "validarRbdFallback")
     @GetMapping("/validar-rbd/{rbd}")
-    public Mono<ResponseEntity<String>> validarRbd(@PathVariable String rbd) {
+    public Mono<ResponseEntity<Map<String, Object>>> validarRbd(@PathVariable String rbd) {
         return webClient.get()
                 .uri(establecimientoUrl + "/establecimiento/rbd/" + rbd)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .map(e -> ResponseEntity.ok((String) e.get("nombre")))
+                .map(e -> {
+                    Map<String, Object> result = Map.of(
+                            "idEstablecimiento", e.get("idEstablecimiento"),
+                            "nombre", e.get("nombre"));
+                    return ResponseEntity.ok(result);
+                })
                 .onErrorReturn(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    public Mono<ResponseEntity<String>> validarRbdFallback(String rbd, Throwable t) {
+    public Mono<ResponseEntity<Map<String, Object>>> validarRbdFallback(String rbd, Throwable t) {
         return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
     }
 }

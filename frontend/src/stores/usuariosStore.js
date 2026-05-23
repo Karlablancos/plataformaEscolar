@@ -40,7 +40,10 @@ export const useUsuariosStore = defineStore('usuarios', {
         this.loading = true
         this.error = null
 
-        const { data } = await api.get('/usuarios')
+        const establecimiento = JSON.parse(localStorage.getItem('establecimientoActivo'))
+        const { data } = await api.get('/usuarios', {
+          params: { idEstablecimiento: establecimiento?.idEstablecimiento },
+        })
         this.usuarios = data.map(mapUsuario)
       } catch (error) {
         this.error = error

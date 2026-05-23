@@ -88,10 +88,11 @@ const buscarEstablecimiento = async () => {
       return
     }
     const response = await axios.get(`http://localhost:8080/auth/validar-rbd/${rbdLimpio}`)
-    
+
     establecimientoEncontrado.value = {
-      nombre: response.data,
-      rbd: rbdLimpio
+      idEstablecimiento: response.data.idEstablecimiento,
+      nombre: response.data.nombre,
+      rbd: rbdLimpio,
     }
     localStorage.setItem('rbd', rbdLimpio)
     localStorage.setItem('establecimientoActivo', JSON.stringify(establecimientoEncontrado.value))
