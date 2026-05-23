@@ -1,5 +1,7 @@
 package com.colegio.usuario.service;
 
+import com.colegio.usuario.dto.ActualizarUsuarioRequest;
+import com.colegio.usuario.dto.CambiarPasswordRequest;
 import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
 import com.colegio.usuario.factory.AdminUsuarioFactory;
@@ -175,6 +177,70 @@ class UsuarioServiceTest {
 
         assertThrows(NoSuchMethodException.class,
                 () -> resultado.getClass().getMethod("getPasswordHash"));
+    }
+
+    // ── actualizar ────────────────────────────────────────────────
+
+    @Test
+    void actualizar_debeModificarCamposPresentes() {
+        Usuario u = usuarioEjemplo();
+        ActualizarUsuarioRequest request = new ActualizarUsuarioRequest();
+        request.setCorreoElectronico("nuevo@colegio.cl");
+        request.setBloqueado(true);
+
+        when(usuarioRepository.findById(1)).thenReturn(Optional.of(u));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(u);
+
+        Optional<UsuarioDTO> resultado = usuarioService.actualizar(1, request);
+
+        assertTrue(resultado.isPresent());
+        verify(usuarioRepository).findById(1);
+        verify(usuarioRepository).save(any(Usuario.class));
+    }
+
+    @Test
+    void actualizar_debeRetornarVacioSiNoExiste() {
+        when(usuarioRepository.findById(99)).thenReturn(Optional.empty());
+
+        Optional<UsuarioDTO> resultado = usuarioService.actualizar(99, new ActualizarUsuarioRequest());
+
+        assertFalse(resultado.isPresent());
+    }
+
+    // ── cambiarPassword ───────────────────────────────────────────
+
+    @Test
+    void cambiarPassword_debeRetornarTrueSiPasswordActualCorrecta() {
+        Usuario u = usuarioEjemplo();
+        CambiarPasswordRequest request = new CambiarPasswordRequest();
+        request.setPasswordActual("secreto123");
+        request.setPasswordNueva("nueva456");
+
+        when(usuarioRepository.findById(1)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("secreto123", "$2a$10$hashSecreto")).thenReturn(true);
+        when(passwordEncoder.encode("nueva456")).thenReturn("$2a$10$nuevoHash");
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(u);
+
+        boolean resultado = usuarioService.cambiarPassword(1, request);
+
+        assertTrue(resultado);
+        verify(passwordEncoder).encode("nueva456");
+    }
+
+    @Test
+    void cambiarPassword_debeRetornarFalseSiPasswordActualIncorrecta() {
+        Usuario u = usuarioEjemplo();
+        CambiarPasswordRequest request = new CambiarPasswordRequest();
+        request.setPasswordActual("incorrecta");
+        request.setPasswordNueva("nueva456");
+
+        when(usuarioRepository.findById(1)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("incorrecta", "$2a$10$hashSecreto")).thenReturn(false);
+
+        boolean resultado = usuarioService.cambiarPassword(1, request);
+
+        assertFalse(resultado);
+        verify(passwordEncoder, never()).encode(anyString());
     }
 
     // ── eliminar ──────────────────────────────────────────────────

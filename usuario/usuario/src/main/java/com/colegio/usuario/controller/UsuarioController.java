@@ -1,9 +1,10 @@
 package com.colegio.usuario.controller;
 
+import com.colegio.usuario.dto.ActualizarUsuarioRequest;
+import com.colegio.usuario.dto.CambiarPasswordRequest;
 import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.LoginRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
-import com.colegio.usuario.dto.ActualizarUsuarioRequest;
 import com.colegio.usuario.service.UsuarioService;
 import com.colegio.usuario.dto.CambiarEstadoUsuarioRequest;
 
@@ -52,19 +53,28 @@ public class UsuarioController {
                 .body(usuarioService.crear(request));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioDTO> actualizar(
+            @PathVariable Integer id,
+            @RequestBody ActualizarUsuarioRequest request) {
+        return usuarioService.actualizar(id, request)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Void> cambiarPassword(
+            @PathVariable Integer id,
+            @RequestBody CambiarPasswordRequest request) {
+        boolean ok = usuarioService.cambiarPassword(id, request);
+        return ok ? ResponseEntity.noContent().build()
+                  : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         usuarioService.eliminar(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> actualizarUsuario(
-            @PathVariable Integer id,
-            @RequestBody ActualizarUsuarioRequest request
-    ) {
-        UsuarioDTO usuarioActualizado = usuarioService.actualizarUsuario(id, request);
-        return ResponseEntity.ok(usuarioActualizado);
     }
 
     @PostMapping("/login")
