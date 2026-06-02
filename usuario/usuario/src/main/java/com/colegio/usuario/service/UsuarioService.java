@@ -115,6 +115,8 @@ public class UsuarioService {
         return usuarioRepository
                 .findByUsernameAndIdEstablecimiento(username, idEstablecimiento)
                 .filter(u -> passwordEncoder.matches(password, u.getPasswordHash()))
+                .filter(u -> "ACTIVO".equalsIgnoreCase(u.getEstado()))
+                .filter(u -> !Boolean.TRUE.equals(u.getBloqueado()))
                 .map(this::convertirADTO);
     }
 

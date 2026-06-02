@@ -44,7 +44,8 @@ public class AuthController {
                 .retrieve()
                 .bodyToMono(Map.class)
                 .flatMap(estab -> {
-                    Integer idEstablecimiento = (Integer) estab.get("idEstablecimiento");
+                    // cast seguro: Jackson puede deserializar enteros JSON como Integer o Long
+                    Integer idEstablecimiento = ((Number) estab.get("idEstablecimiento")).intValue();
                     String nombreEstab = (String) estab.get("nombre");
 
                     return webClient.post()
@@ -56,19 +57,33 @@ public class AuthController {
                             .retrieve()
                             .bodyToMono(Map.class)
                             .map(usuario -> {
+                                // extrae el rol real del usuario en vez de hardcodear "ADMIN"
+                                Integer idRol = usuario.get("idRol") != null
+                                        ? ((Number) usuario.get("idRol")).intValue()
+                                        : 1;
+                                String rol = mapearRol(idRol);
                                 String token = jwtUtil.generarToken(
                                         request.getUsername(),
                                         request.getRbd(),
-                                        "ADMIN");
+                                        rol);
                                 LoginResponse response = new LoginResponse(
                                         token,
                                         request.getUsername(),
-                                        "ADMIN",
+                                        rol,
                                         nombreEstab,
-                                        request.getRbd());
+                                        request.getRbd(),
+                                        idEstablecimiento);
                                 return ResponseEntity.ok(response);
                             });
                 });
+    }
+
+    private String mapearRol(Integer idRol) {
+        return switch (idRol) {
+            case 2 -> "PROFESOR";
+            case 3, 4 -> "APODERADO";
+            default -> "ADMIN";
+        };
     }
 
     public Mono<ResponseEntity<LoginResponse>> loginFallback(LoginRequest request, Throwable t) {

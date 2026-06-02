@@ -7,15 +7,17 @@ public class LoginResponse {
     private String rol;
     private String nombreColegio;
     private String rbd;
+    private Integer idEstablecimiento;
 
     public LoginResponse(String token, String username,
                          String rol, String nombreColegio,
-                         String rbd) {
+                         String rbd, Integer idEstablecimiento) {
         this.token = token;
         this.username = username;
         this.rol = rol;
         this.nombreColegio = nombreColegio;
         this.rbd = rbd;
+        this.idEstablecimiento = idEstablecimiento;
     }
 
     public String getToken() { return token; }
@@ -23,4 +25,5 @@ public class LoginResponse {
     public String getRol() { return rol; }
     public String getNombreColegio() { return nombreColegio; }
     public String getRbd() { return rbd; }
+    public Integer getIdEstablecimiento() { return idEstablecimiento; }
 }

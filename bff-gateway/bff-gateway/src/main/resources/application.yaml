@@ -56,5 +56,5 @@ management:
       exposure:
         include: health,info,gateway,circuitbreakers
 
-        jwt:
-          secret: ${JWT_SECRET:colegio-bernardo-ohiggins-secret-key-2026}
+jwt:
+  secret: ${JWT_SECRET:colegio-bernardo-ohiggins-secret-key-2026}
