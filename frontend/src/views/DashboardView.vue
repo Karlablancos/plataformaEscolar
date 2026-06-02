@@ -23,7 +23,10 @@
             <i class="bi bi-people me-1"></i>
             Estudiantes
           </p>
-          <h2 class="fw-bold mb-0">{{ totalAlumnos }}</h2>
+          <h2 class="fw-bold mb-0">
+            <span v-if="cargando" class="spinner-border spinner-border-sm text-secondary" />
+            <span v-else>{{ totalAlumnos }}</span>
+          </h2>
         </div>
       </div>
     </div>
@@ -35,7 +38,10 @@
             <i class="bi bi-person-badge me-1"></i>
             Docentes
           </p>
-          <h2 class="fw-bold mb-0">{{ totalProfesores }}</h2>
+          <h2 class="fw-bold mb-0">
+            <span v-if="cargando" class="spinner-border spinner-border-sm text-secondary" />
+            <span v-else>{{ totalProfesores }}</span>
+          </h2>
         </div>
       </div>
     </div>
@@ -47,7 +53,10 @@
             <i class="bi bi-easel me-1"></i>
             Cursos
           </p>
-          <h2 class="fw-bold mb-0">{{ totalCursos }}</h2>
+          <h2 class="fw-bold mb-0">
+            <span v-if="cargando" class="spinner-border spinner-border-sm text-secondary" />
+            <span v-else>{{ totalCursos }}</span>
+          </h2>
         </div>
       </div>
     </div>
@@ -59,7 +68,10 @@
             <i class="bi bi-journal-bookmark me-1"></i>
             Asignaturas
           </p>
-          <h2 class="fw-bold mb-0">{{ totalAsignaturas }}</h2>
+          <h2 class="fw-bold mb-0">
+            <span v-if="cargando" class="spinner-border spinner-border-sm text-secondary" />
+            <span v-else>{{ totalAsignaturas }}</span>
+          </h2>
         </div>
       </div>
     </div>
@@ -188,17 +200,25 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAcademicStore } from '../stores/academicStore'
+import { useAuthStore } from '../stores/authStore'
+import api from '@/api/axios'
 
 const academic = useAcademicStore()
+const authStore = useAuthStore()
+
+// Estado de carga de la API
+const cargando = ref(false)
+const apiTotales = ref({ alumnos: null, docentes: null, cursos: null, asignaturas: null })
 
 const anioActivo = computed({
   get: () => academic.anioActivo,
   set: (value) => academic.cambiarAnioActivo(value),
 })
 
+// Datos del localStorage (fallback)
 const alumnos = computed(() => academic.alumnosFiltradosNormalizados)
 const profesores = computed(() => academic.docentesFiltradosNormalizados)
 const cursos = computed(() => academic.cursosFiltradosNormalizados)
@@ -211,10 +231,44 @@ const relacionesAsignaturaCurso = computed(() => {
   })
 })
 
-const totalAlumnos = computed(() => alumnos.value.length)
-const totalProfesores = computed(() => profesores.value.length)
-const totalCursos = computed(() => cursos.value.length)
-const totalAsignaturas = computed(() => asignaturas.value.length)
+// Totales: usa API si cargó, sino localStorage como fallback
+const totalAlumnos = computed(() => apiTotales.value.alumnos ?? alumnos.value.length)
+const totalProfesores = computed(() => apiTotales.value.docentes ?? profesores.value.length)
+const totalCursos = computed(() => apiTotales.value.cursos ?? cursos.value.length)
+const totalAsignaturas = computed(() => apiTotales.value.asignaturas ?? asignaturas.value.length)
+
+onMounted(async () => {
+  const idEstablecimiento = authStore.establecimientoId
+    ?? JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
+  if (!idEstablecimiento) return
+
+  cargando.value = true
+
+  const [estudiantesRes, docentesRes, cursosRes, asignaturasRes] = await Promise.allSettled([
+    api.get(`/establecimiento/${idEstablecimiento}/estudiantes`),
+    api.get(`/usuarios?idEstablecimiento=${idEstablecimiento}`),
+    api.get(`/establecimiento/${idEstablecimiento}/cursos`),
+    api.get(`/establecimiento/${idEstablecimiento}/asignaturas`),
+  ])
+
+  if (estudiantesRes.status === 'fulfilled') {
+    apiTotales.value.alumnos = estudiantesRes.value.data.length
+  }
+
+  if (docentesRes.status === 'fulfilled') {
+    apiTotales.value.docentes = docentesRes.value.data.filter((u) => u.idRol === 2).length
+  }
+
+  if (cursosRes.status === 'fulfilled') {
+    apiTotales.value.cursos = cursosRes.value.data.length
+  }
+
+  if (asignaturasRes.status === 'fulfilled') {
+    apiTotales.value.asignaturas = asignaturasRes.value.data.length
+  }
+
+  cargando.value = false
+})
 
 const getCursoId = (curso) => curso.id_curso ?? curso.id
 

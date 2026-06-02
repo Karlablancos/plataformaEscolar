@@ -1,5 +1,8 @@
-target
-.git
+﻿.git
 .idea
 .DS_Store
 *.log
+target/surefire-reports
+target/classes
+target/test-classes
+target/maven-status

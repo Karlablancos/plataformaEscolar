@@ -1,11 +1,15 @@
 package com.colegio.establecimiento.controller;
 
+import com.colegio.establecimiento.dto.AsignaturaDTO;
+import com.colegio.establecimiento.dto.CursoDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
-import com.colegio.establecimiento.model.Establecimiento;
+import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.service.EstablecimientoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/establecimiento")
@@ -42,4 +46,18 @@ public class EstablecimientoController {
         return ResponseEntity.ok(establecimientoService.existeRbd(rbd));
     }
 
+    @GetMapping("/{id}/cursos")
+    public ResponseEntity<List<CursoDTO>> listarCursos(@PathVariable Integer id) {
+        return ResponseEntity.ok(establecimientoService.listarCursos(id));
+    }
+
+    @GetMapping("/{id}/asignaturas")
+    public ResponseEntity<List<AsignaturaDTO>> listarAsignaturas(@PathVariable Integer id) {
+        return ResponseEntity.ok(establecimientoService.listarAsignaturas(id));
+    }
+
+    @GetMapping("/{id}/estudiantes")
+    public ResponseEntity<List<EstudianteDTO>> listarEstudiantes(@PathVariable Integer id) {
+        return ResponseEntity.ok(establecimientoService.listarEstudiantes(id));
+    }
 }

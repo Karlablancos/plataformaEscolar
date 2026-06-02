@@ -60,11 +60,9 @@ public class AuthController {
                                             .error(new RuntimeException("Credenciales inválidas o usuario inactivo")))
                             .bodyToMono(Map.class)
                             .map(usuario -> {
-                                // extrae el rol real del usuario en vez de hardcodear "ADMIN"
-                                Integer idRol = usuario.get("idRol") != null
-                                        ? ((Number) usuario.get("idRol")).intValue()
-                                        : 1;
-                                String rol = (String) usuario.get("nombreRol");
+                                // normaliza el nombre_rol de la BD al formato que espera el frontend
+                                String rolBD = (String) usuario.get("nombreRol");
+                                String rol = normalizarRol(rolBD);
                                 String token = jwtUtil.generarToken(
                                         request.getUsername(),
                                         request.getRbd(),
@@ -80,6 +78,15 @@ public class AuthController {
                             })
                             .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()));
                 });
+    }
+
+    private String normalizarRol(String nombreRol) {
+        if (nombreRol == null) return "ADMIN";
+        return switch (nombreRol.toUpperCase()) {
+            case "ADMINISTRADOR" -> "ADMIN";
+            case "DOCENTE"       -> "PROFESOR";
+            default              -> nombreRol.toUpperCase();
+        };
     }
 
     public Mono<ResponseEntity<LoginResponse>> loginFallback(LoginRequest request, Throwable t) {
