@@ -45,7 +45,7 @@ const abrirEditarCurso = (curso) => {
   Object.assign(form, {
     numero: curso.numero || '',
     letra: curso.letra || '',
-    tipo_ensenanza: curso.tipo_ensenanza || curso.tipo_ensenianza || '',
+    tipo_ensenanza: curso.tipo_ensenanza || '',
     modalidad: curso.modalidad || 'Regular',
     anio_academico: curso.anio_academico || curso.anio || academic.anioActivo,
     es_nivel_since: Boolean(curso.es_nivel_since),
@@ -126,7 +126,7 @@ const eliminarCurso = (curso) => {
                 {{ curso.nombre }}
               </td>
 
-              <td>{{ curso.tipo_ensenanza || curso.tipo_ensenianza }}</td>
+              <td>{{ curso.tipo_ensenanza }}</td>
               <td>{{ curso.modalidad }}</td>
               <td>{{ curso.anio }}</td>
 

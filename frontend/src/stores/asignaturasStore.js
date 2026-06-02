@@ -114,7 +114,6 @@ export const useAsignaturasStore = defineStore('asignaturas', {
 
       delete nuevaAsignatura.horas_semanales
       delete nuevaAsignatura.tipo_ensenanza
-      delete nuevaAsignatura.tipo_ensenianza
 
       this.asignaturas.push(nuevaAsignatura)
       this.persistir()
@@ -133,7 +132,6 @@ export const useAsignaturasStore = defineStore('asignaturas', {
 
       delete dataLimpia.horas_semanales
       delete dataLimpia.tipo_ensenanza
-      delete dataLimpia.tipo_ensenianza
 
       this.asignaturas[index] = {
         ...this.asignaturas[index],

@@ -32,7 +32,7 @@ export const getCursoNombre = (curso) => {
   if (curso.nombre) return curso.nombre
 
   const numero = curso.numero ? `${curso.numero}°` : ''
-  const tipo = curso.tipo_ensenanza || curso.tipo_ensenianza || ''
+  const tipo = curso.tipo_ensenanza || ''
   const letra = curso.letra || ''
 
   return `${numero} ${tipo} ${letra}`.replace(/\s+/g, ' ').trim()

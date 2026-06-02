@@ -67,7 +67,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import api from '@/api/axios'
 
 const router = useRouter()
 
@@ -87,7 +87,7 @@ const buscarEstablecimiento = async () => {
       error.value = 'Ingresa el RBD del establecimiento.'
       return
     }
-    const response = await axios.get(`http://localhost:8080/auth/validar-rbd/${rbdLimpio}`)
+    const response = await api.get(`/auth/validar-rbd/${rbdLimpio}`)
 
     establecimientoEncontrado.value = {
       idEstablecimiento: response.data.idEstablecimiento,

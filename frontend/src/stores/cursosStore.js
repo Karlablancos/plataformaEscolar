@@ -90,7 +90,7 @@ export const useCursosStore = defineStore('cursos', {
 
         numero: data.numero ? Number(data.numero) : null,
         letra: data.letra || '',
-        tipo_ensenanza: data.tipo_ensenanza || data.tipo_ensenianza || '',
+        tipo_ensenanza: data.tipo_ensenanza || '',
         modalidad: data.modalidad || 'Regular',
         anio_academico: data.anio_academico ? Number(data.anio_academico) : this.anioActivo,
         es_nivel_since: Boolean(data.es_nivel_since),
