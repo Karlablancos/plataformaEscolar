@@ -9,6 +9,7 @@ public class UsuarioDTO {
     private Integer idUsuario;
     private Integer idEstablecimiento;
     private Integer idRol;
+    private String nombreRol;
     private String username;
     private String correoElectronico;
     private LocalDateTime ultimoAcceso;

@@ -82,10 +82,14 @@ public class UsuarioService {
         return usuarioRepository.findById(id).map(usuario -> {
             if (request.getUsername() != null && !request.getUsername().isBlank())
                 usuario.setUsername(request.getUsername().trim());
-            if (request.getIdRol() != null) usuario.setIdRol(request.getIdRol());
-            if (request.getCorreoElectronico() != null) usuario.setCorreoElectronico(request.getCorreoElectronico());
-            if (request.getBloqueado() != null) usuario.setBloqueado(request.getBloqueado());
-            if (request.getEstado() != null) usuario.setEstado(request.getEstado());
+            if (request.getIdRol() != null)
+                usuario.setIdRol(request.getIdRol());
+            if (request.getCorreoElectronico() != null)
+                usuario.setCorreoElectronico(request.getCorreoElectronico());
+            if (request.getBloqueado() != null)
+                usuario.setBloqueado(request.getBloqueado());
+            if (request.getEstado() != null)
+                usuario.setEstado(request.getEstado());
             return convertirADTO(usuarioRepository.save(usuario));
         });
     }
@@ -110,8 +114,8 @@ public class UsuarioService {
     }
 
     public Optional<UsuarioDTO> login(String username,
-                                      String password,
-                                      Integer idEstablecimiento) {
+            String password,
+            Integer idEstablecimiento) {
         return usuarioRepository
                 .findByUsernameAndIdEstablecimiento(username, idEstablecimiento)
                 .filter(u -> passwordEncoder.matches(password, u.getPasswordHash()))
@@ -130,6 +134,7 @@ public class UsuarioService {
         dto.setUltimoAcceso(usuario.getUltimoAcceso());
         dto.setBloqueado(usuario.getBloqueado());
         dto.setEstado(usuario.getEstado());
+        dto.setNombreRol(usuarioRepository.findNombreRolById(usuario.getIdRol()));
         return dto;
     }
 }
