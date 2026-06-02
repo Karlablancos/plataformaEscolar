@@ -6,12 +6,13 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Value;
 
 @Component
 public class JwtUtil {
 
-    private final String SECRET =
-            "colegio-bernardo-ohiggins-secret-key-2026";
+    @Value("${jwt.secret}")
+    private String SECRET;
 
     private final long EXPIRATION = 10800000;
 
