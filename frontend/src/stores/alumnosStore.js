@@ -11,6 +11,7 @@ import {
 
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getNombreCompleto } from './shared/helpers'
+import api from '@/api/axios'
 
 const getAlumnoId = (alumno) => alumno.id_alumno ?? alumno.id
 
@@ -21,6 +22,7 @@ const getAlumnoEstablecimientoId = (alumno) => {
 export const useAlumnosStore = defineStore('alumnos', {
   state: () => ({
     alumnos: loadFromStorage('alumnos', alumnosMock),
+    cargando: false,
 
     apoderados: loadFromStorage('apoderados', apoderadosMock),
     estudianteApoderado: loadFromStorage('estudianteApoderado', estudianteApoderadoMock),
@@ -159,6 +161,77 @@ export const useAlumnosStore = defineStore('alumnos', {
   },
 
   actions: {
+    async cargarAlumnos() {
+      const idEstablecimiento =
+        getEstablecimientoId() ??
+        JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
+
+      console.log('[cargarAlumnos] llamado — idEstablecimiento:', idEstablecimiento)
+
+      if (!idEstablecimiento) {
+        console.warn('[cargarAlumnos] idEstablecimiento es null, abortando')
+        return
+      }
+
+      this.cargando = true
+      try {
+        const { data } = await api.get(`/establecimiento/${idEstablecimiento}/estudiantes`)
+        console.log('[cargarAlumnos] API respondió —', data.length, 'estudiantes')
+
+        this.alumnos = data.map((e) => ({
+          // IDs en ambas convenciones para compatibilidad con el resto del store
+          id: e.idEstudiante,
+          id_alumno: e.idEstudiante,
+
+          // Establecimiento en ambas convenciones
+          id_establecimiento: e.idEstablecimiento,
+          establecimientoId: e.idEstablecimiento,
+
+          // Nombre — trim() porque la BD guarda char(8)/char(1) con espacios
+          nombres: e.nombres?.trim() ?? '',
+          apellido_paterno: e.apellidoPaterno?.trim() ?? '',
+          apellido_materno: e.apellidoMaterno?.trim() ?? '',
+          nombreCompleto: e.nombreCompleto?.trim() ?? '',
+
+          // RUT — trim() para eliminar espacios del tipo char(8)
+          rut: e.rut?.trim() ?? '',
+          dv: e.dv?.trim() ?? '',
+
+          // Contacto en ambas convenciones
+          correo_electronico: e.correoElectronico ?? '',
+          correoElectronico: e.correoElectronico ?? '',
+          telefono: e.telefono ?? '',
+
+          // Fechas
+          fecha_nacimiento: e.fechaNacimiento ?? null,
+          fecha_matricula: e.fechaMatricula ?? null,
+
+          // Estado: la BD guarda ACTIVO/INACTIVO (mayúsculas), la vista espera Activo/Inactivo
+          estado: e.estado
+            ? e.estado.charAt(0).toUpperCase() + e.estado.slice(1).toLowerCase()
+            : 'Activo',
+
+          // Flags booleanos
+          prioritario: e.prioritario ?? false,
+          preferente: e.preferente ?? false,
+          tieneNee: e.tieneNee ?? false,
+          enPie: e.enPie ?? false,
+
+          // Campos no provistos por la API — se mantienen en null/default
+          cursoId: null,
+          id_curso: null,
+          asistencia: 0,
+          promedio: 0,
+        }))
+
+        this.persistir()
+      } catch (error) {
+        console.error('[cargarAlumnos] ERROR en la API, usando localStorage:', error?.response?.status, error?.message)
+      } finally {
+        this.cargando = false
+      }
+    },
+
     persistir() {
       saveToStorage('alumnos', this.alumnos)
       saveToStorage('apoderados', this.apoderados)

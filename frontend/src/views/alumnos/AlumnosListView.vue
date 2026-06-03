@@ -1,11 +1,17 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAlumnosStore } from '@/stores/alumnosStore'
 import { useCursosStore } from '@/stores/cursosStore'
 
 const alumnosStore = useAlumnosStore()
 const cursosStore = useCursosStore()
+
+const cargando = computed(() => alumnosStore.cargando)
+
+onMounted(() => {
+  alumnosStore.cargarAlumnos()
+})
 
 const search = ref('')
 const cursoFiltro = ref('')
@@ -188,8 +194,11 @@ const eliminarAlumno = (alumno) => {
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h2 class="h5 fw-bold mb-0">Estudiantes registrados</h2>
 
-          <span class="badge rounded-pill text-bg-primary">
-            {{ alumnosFiltrados.length }} alumnos
+          <span class="d-flex align-items-center gap-2">
+            <span v-if="cargando" class="spinner-border spinner-border-sm text-primary" />
+            <span class="badge rounded-pill text-bg-primary">
+              {{ alumnosFiltrados.length }} alumnos
+            </span>
           </span>
         </div>
 
