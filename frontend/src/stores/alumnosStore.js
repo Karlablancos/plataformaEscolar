@@ -58,7 +58,7 @@ export const useAlumnosStore = defineStore('alumnos', {
       const establecimientoId = getEstablecimientoId()
 
       return this.alumnosNormalizados.filter(
-        (alumno) => alumno.id_establecimiento === establecimientoId,
+        (alumno) => Number(alumno.id_establecimiento) === Number(establecimientoId),
       )
     },
 
@@ -166,26 +166,19 @@ export const useAlumnosStore = defineStore('alumnos', {
         getEstablecimientoId() ??
         JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
 
-      console.log('[cargarAlumnos] llamado — idEstablecimiento:', idEstablecimiento)
-
-      if (!idEstablecimiento) {
-        console.warn('[cargarAlumnos] idEstablecimiento es null, abortando')
-        return
-      }
+      if (!idEstablecimiento) return
 
       this.cargando = true
       try {
         const { data } = await api.get(`/establecimiento/${idEstablecimiento}/estudiantes`)
-        console.log('[cargarAlumnos] API respondió —', data.length, 'estudiantes')
-
         this.alumnos = data.map((e) => ({
           // IDs en ambas convenciones para compatibilidad con el resto del store
           id: e.idEstudiante,
           id_alumno: e.idEstudiante,
 
-          // Establecimiento en ambas convenciones
-          id_establecimiento: e.idEstablecimiento,
-          establecimientoId: e.idEstablecimiento,
+          // Establecimiento en ambas convenciones — Number() garantiza que sea número y no string
+          id_establecimiento: Number(e.idEstablecimiento),
+          establecimientoId: Number(e.idEstablecimiento),
 
           // Nombre — trim() porque la BD guarda char(8)/char(1) con espacios
           nombres: e.nombres?.trim() ?? '',
@@ -226,7 +219,7 @@ export const useAlumnosStore = defineStore('alumnos', {
 
         this.persistir()
       } catch (error) {
-        console.error('[cargarAlumnos] ERROR en la API, usando localStorage:', error?.response?.status, error?.message)
+        console.warn('cargarAlumnos: usando localStorage como fallback', error?.message)
       } finally {
         this.cargando = false
       }
