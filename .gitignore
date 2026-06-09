@@ -27,3 +27,6 @@ target/
 
 # env
 .env
+
+# Configuración local Spring
+**/application-local.yaml
