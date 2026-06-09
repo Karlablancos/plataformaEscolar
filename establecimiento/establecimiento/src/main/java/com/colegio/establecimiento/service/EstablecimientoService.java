@@ -27,27 +27,30 @@ public class EstablecimientoService {
     private final AsignaturaRepository asignaturaRepository;
     private final EstudianteRepository estudianteRepository;
 
-    public List<EstablecimientoDTO> listarTodos() {
-        return establecimientoRepository.findAll()
-                .stream()
-                .map(e -> {
-                    EstablecimientoDTO dto = new EstablecimientoDTO();
-                    dto.setIdEstablecimiento(e.getIdEstablecimiento());
-                    dto.setRbd(e.getRbd());
-                    dto.setNombre(e.getNombre());
-                    dto.setIdTipoEstab(e.getIdTipoEstab());
-                    dto.setSostenedor(e.getSostenedor());
-                    dto.setDirector(e.getDirector());
-                    dto.setCalle(e.getCalle());
-                    dto.setNumero(e.getNumero());
-                    dto.setIdComuna(e.getIdComuna());
-                    dto.setCorreoElectronico(e.getCorreoElectronico());
-                    dto.setTelefono(e.getTelefono());
-                    dto.setModoAula(e.getModoAula());
-                    dto.setEstado(e.getEstado());
-                    return dto;
-                })
-                .toList();
+    public List<EstablecimientoDTO> listarTodos(Integer idEstablecimiento) {
+        List<Establecimiento> fuente = (idEstablecimiento != null)
+                ? establecimientoRepository.findById(idEstablecimiento)
+                        .map(List::of).orElse(List.of())
+                : establecimientoRepository.findByEstado("ACTIVO");
+        return fuente.stream().map(this::toEstablecimientoDTO).toList();
+    }
+
+    private EstablecimientoDTO toEstablecimientoDTO(Establecimiento e) {
+        EstablecimientoDTO dto = new EstablecimientoDTO();
+        dto.setIdEstablecimiento(e.getIdEstablecimiento());
+        dto.setRbd(e.getRbd());
+        dto.setNombre(e.getNombre());
+        dto.setIdTipoEstab(e.getIdTipoEstab());
+        dto.setSostenedor(e.getSostenedor());
+        dto.setDirector(e.getDirector());
+        dto.setCalle(e.getCalle());
+        dto.setNumero(e.getNumero());
+        dto.setIdComuna(e.getIdComuna());
+        dto.setCorreoElectronico(e.getCorreoElectronico());
+        dto.setTelefono(e.getTelefono());
+        dto.setModoAula(e.getModoAula());
+        dto.setEstado(e.getEstado());
+        return dto;
     }
 
     public Optional<Establecimiento> buscarPorRbd(String rbd) {
