@@ -2,6 +2,7 @@ package com.colegio.establecimiento.service;
 
 import com.colegio.establecimiento.dto.AsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
+import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.model.Asignatura;
 import com.colegio.establecimiento.model.Curso;
@@ -25,6 +26,29 @@ public class EstablecimientoService {
     private final CursoRepository cursoRepository;
     private final AsignaturaRepository asignaturaRepository;
     private final EstudianteRepository estudianteRepository;
+
+    public List<EstablecimientoDTO> listarTodos() {
+        return establecimientoRepository.findAll()
+                .stream()
+                .map(e -> {
+                    EstablecimientoDTO dto = new EstablecimientoDTO();
+                    dto.setIdEstablecimiento(e.getIdEstablecimiento());
+                    dto.setRbd(e.getRbd());
+                    dto.setNombre(e.getNombre());
+                    dto.setIdTipoEstab(e.getIdTipoEstab());
+                    dto.setSostenedor(e.getSostenedor());
+                    dto.setDirector(e.getDirector());
+                    dto.setCalle(e.getCalle());
+                    dto.setNumero(e.getNumero());
+                    dto.setIdComuna(e.getIdComuna());
+                    dto.setCorreoElectronico(e.getCorreoElectronico());
+                    dto.setTelefono(e.getTelefono());
+                    dto.setModoAula(e.getModoAula());
+                    dto.setEstado(e.getEstado());
+                    return dto;
+                })
+                .toList();
+    }
 
     public Optional<Establecimiento> buscarPorRbd(String rbd) {
         return establecimientoRepository.findByRbd(rbd);

@@ -60,9 +60,19 @@ public class AuthController {
                                             .error(new RuntimeException("Credenciales inválidas o usuario inactivo")))
                             .bodyToMono(Map.class)
                             .map(usuario -> {
-                                // normaliza el nombre_rol de la BD al formato que espera el frontend
-                                String rolBD = (String) usuario.get("nombreRol");
-                                String rol = normalizarRol(rolBD);
+                                // Intenta obtener el nombre del rol devuelto por usuario-service
+                                String rolBD = usuario.get("nombreRol") != null
+                                        ? (String) usuario.get("nombreRol")
+                                        : null;
+                                // Fallback por idRol si findNombreRolById devolvió null
+                                String rol;
+                                if (rolBD != null) {
+                                    rol = normalizarRol(rolBD);
+                                } else {
+                                    Integer idRol = usuario.get("idRol") != null
+                                            ? ((Number) usuario.get("idRol")).intValue() : 1;
+                                    rol = normalizarRolPorId(idRol);
+                                }
                                 String token = jwtUtil.generarToken(
                                         request.getUsername(),
                                         request.getRbd(),
@@ -85,7 +95,18 @@ public class AuthController {
         return switch (nombreRol.toUpperCase()) {
             case "ADMINISTRADOR" -> "ADMIN";
             case "DOCENTE"       -> "PROFESOR";
+            case "SOSTENEDOR"    -> "SOSTENEDOR";
             default              -> nombreRol.toUpperCase();
+        };
+    }
+
+    // Fallback cuando findNombreRolById devuelve null — mapea directamente por id_rol
+    private String normalizarRolPorId(Integer idRol) {
+        return switch (idRol) {
+            case 1 -> "ADMIN";
+            case 2 -> "PROFESOR";
+            case 5 -> "SOSTENEDOR";
+            default -> "APODERADO";
         };
     }
 

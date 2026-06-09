@@ -18,6 +18,11 @@ public class EstablecimientoController {
 
     private final EstablecimientoService establecimientoService;
 
+    @GetMapping
+    public ResponseEntity<List<EstablecimientoDTO>> listarTodos() {
+        return ResponseEntity.ok(establecimientoService.listarTodos());
+    }
+
     @GetMapping("/rbd/{rbd}")
     public ResponseEntity<EstablecimientoDTO> buscarPorRbd(@PathVariable String rbd) {
         return establecimientoService.buscarPorRbd(rbd)

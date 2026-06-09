@@ -125,6 +125,16 @@ const routes = [
   },
 
   {
+    path: '/sostenedor/dashboard',
+    name: 'sostenedor-dashboard',
+    component: () => import('@/views/sostenedor/SostenedorDashboardView.vue'),
+    meta: {
+      requiresAuth: true,
+      roles: ['SOSTENEDOR'],
+    },
+  },
+
+  {
     path: '/profesor',
     component: () => import('@/components/AppLayout.vue'),
     meta: {
@@ -185,13 +195,17 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.publicOnly && token && user) {
-    return user.rol === 'PROFESOR' ? '/profesor/dashboard' : '/admin/dashboard'
+    if (user.rol === 'PROFESOR') return '/profesor/dashboard'
+    if (user.rol === 'SOSTENEDOR') return '/sostenedor/dashboard'
+    return '/admin/dashboard'
   }
 
   const allowedRoles = to.meta.roles as unknown as string[] | undefined
 
   if (allowedRoles && user && !allowedRoles.includes(user.rol)) {
-    return user.rol === 'PROFESOR' ? '/profesor/dashboard' : '/admin/dashboard'
+    if (user.rol === 'PROFESOR') return '/profesor/dashboard'
+    if (user.rol === 'SOSTENEDOR') return '/sostenedor/dashboard'
+    return '/admin/dashboard'
   }
 })
 
