@@ -73,6 +73,10 @@ public class AuthController {
                                             ? ((Number) usuario.get("idRol")).intValue() : 1;
                                     rol = normalizarRolPorId(idRol);
                                 }
+                                // Usar el id_establecimiento del usuario autenticado
+                                Integer idEstabUsuario = usuario.get("idEstablecimiento") != null
+                                        ? ((Number) usuario.get("idEstablecimiento")).intValue()
+                                        : idEstablecimiento;
                                 String token = jwtUtil.generarToken(
                                         request.getUsername(),
                                         request.getRbd(),
@@ -83,7 +87,7 @@ public class AuthController {
                                         rol,
                                         nombreEstab,
                                         request.getRbd(),
-                                        idEstablecimiento);
+                                        idEstabUsuario);
                                 return ResponseEntity.ok(response);
                             })
                             .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()));

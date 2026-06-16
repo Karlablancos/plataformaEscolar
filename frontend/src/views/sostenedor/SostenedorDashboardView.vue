@@ -166,7 +166,10 @@ onMounted(async () => {
   // Contar total de establecimientos
   cargandoTotal.value = true
   try {
-    const { data } = await api.get('/establecimiento')
+    const idEstab = authStore.establecimientoId
+    const { data } = await api.get('/establecimiento', {
+      params: idEstab ? { idEstablecimiento: idEstab } : {},
+    })
     totalEstablecimientos.value = Array.isArray(data) ? data.length : 0
   } catch {
     totalEstablecimientos.value = 0

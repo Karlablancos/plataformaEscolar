@@ -19,8 +19,9 @@ public class EstablecimientoController {
     private final EstablecimientoService establecimientoService;
 
     @GetMapping
-    public ResponseEntity<List<EstablecimientoDTO>> listarTodos() {
-        return ResponseEntity.ok(establecimientoService.listarTodos());
+    public ResponseEntity<List<EstablecimientoDTO>> listarTodos(
+            @RequestParam(required = false) Integer idEstablecimiento) {
+        return ResponseEntity.ok(establecimientoService.listarTodos(idEstablecimiento));
     }
 
     @GetMapping("/rbd/{rbd}")

@@ -623,3 +623,19 @@ INSERT INTO mensaje_destinatario (id_mensaje, id_usuario, leido, fecha_lectura) 
 INSERT INTO mensaje_destinatario (id_mensaje, id_usuario, leido, fecha_lectura) VALUES (10, 10, false, '2026-04-16T12:00:00');
 INSERT INTO mensaje_destinatario (id_mensaje, id_usuario, leido, fecha_lectura) VALUES (11, 11, false, '2026-04-25T14:00:00');
 INSERT INTO mensaje_destinatario (id_mensaje, id_usuario, leido, fecha_lectura) VALUES (12, 12, false, '2026-06-15T08:00:00');
+
+-- ============================================================
+-- ROL SOSTENEDOR (id_rol = 5)
+-- ============================================================
+INSERT INTO rol (nombre_rol, descripcion) VALUES ('SOSTENEDOR', 'Propietario o administrador del establecimiento educacional');
+
+-- ============================================================
+-- ACTUALIZAR ESTABLECIMIENTO 1 CON RBD REAL
+-- ============================================================
+UPDATE establecimiento SET rbd = '646', nombre = 'COLEGIO BERNARDO O''HIGGINS' WHERE id_establecimiento = 1;
+
+-- ============================================================
+-- USUARIO SOSTENEDOR
+-- ============================================================
+INSERT INTO usuario (id_establecimiento, id_rol, username, password_hash, correo_electronico, intentos_fallidos, bloqueado, fecha_creacion, estado)
+VALUES (1, 5, 'katherine.sostenedor', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'katherine@bohiggins.cl', 0, false, '2026-01-01T08:00:00', 'ACTIVO');
