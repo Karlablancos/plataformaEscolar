@@ -140,7 +140,9 @@ const login = async () => {
   }
 
   const user = authStore.user
-  const destino = user?.rol === 'PROFESOR' ? '/profesor/dashboard' : '/admin/dashboard'
+  let destino = '/admin/dashboard'
+  if (user?.rol === 'PROFESOR') destino = '/profesor/dashboard'
+  else if (user?.rol === 'SOSTENEDOR') destino = '/sostenedor/dashboard'
   router.replace(destino)
 }
 
