@@ -29,6 +29,11 @@ spring:
           predicates:
             - Path=/asistencias,/asistencias/**
 
+        - id: academico-service
+          uri: http://academico-service:8084
+          predicates:
+            - Path=/evaluacion,/evaluacion/**,/notas,/notas/**
+
 microservicios:
   usuario-url: http://usuario-service:8081
   establecimiento-url: http://establecimiento-service:8082
