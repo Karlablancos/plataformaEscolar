@@ -79,6 +79,35 @@
               <RouterLink class="nav-link" to="/admin/asignaturas"> Asignaturas </RouterLink>
             </li>
 
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Académico
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <RouterLink class="dropdown-item" :to="academicoPath('evaluaciones')">
+                    <i class="bi bi-journal-check me-2"></i>Evaluaciones
+                  </RouterLink>
+                </li>
+                <li>
+                  <RouterLink class="dropdown-item" :to="academicoPath('libro-notas')">
+                    <i class="bi bi-table me-2"></i>Libro de Notas
+                  </RouterLink>
+                </li>
+                <li>
+                  <RouterLink class="dropdown-item" :to="academicoPath('promocion')">
+                    <i class="bi bi-award me-2"></i>Promoción
+                  </RouterLink>
+                </li>
+              </ul>
+            </li>
+
             <li class="nav-item ms-lg-2">
               <button class="btn btn-outline-light px-3 btn-sm" @click="logout">
                 <i class="bi bi-box-arrow-right me-1"></i>
@@ -125,6 +154,9 @@ const nombreColegio = computed(() => {
 const homePath = computed(() => (auth.isProfesor ? '/profesor/dashboard' : '/admin/dashboard'))
 
 const cursosPath = computed(() => (auth.isProfesor ? '/profesor/cursos' : '/admin/cursos'))
+
+const academicoPath = (seccion) =>
+  auth.isProfesor ? `/profesor/academico/${seccion}` : `/admin/academico/${seccion}`
 
 const logout = () => {
   auth.logout()
