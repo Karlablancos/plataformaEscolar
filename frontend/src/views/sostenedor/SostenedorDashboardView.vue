@@ -186,7 +186,7 @@ onMounted(async () => {
 
   cargandoEstab.value = true
   try {
-    const { data } = await api.get(`/establecimiento/${idEstab}`)
+    const { data } = await api.get(`/isEstablecimiento/${idEstab}`)
     establecimiento.value = data
   } catch (err) {
     const status = err?.response?.status
