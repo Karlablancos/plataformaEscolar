@@ -27,7 +27,7 @@ spring:
         - id: asistencia-service
           uri: http://asistencia-service:8083
           predicates:
-            - Path=/asistencias,/asistencias/**
+            - Path=/asistencia,/asistencia/**
 
 microservicios:
   usuario-url: http://usuario-service:8081
