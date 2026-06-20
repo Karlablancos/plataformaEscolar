@@ -30,7 +30,7 @@ public class EstablecimientoService {
     public List<EstablecimientoDTO> listarTodos(Integer idEstablecimiento) {
         List<Establecimiento> fuente = (idEstablecimiento != null)
                 ? establecimientoRepository.findById(idEstablecimiento)
-                        .map(List::of).orElse(List.of())
+                  .map(List::of).orElse(List.of())
                 : establecimientoRepository.findByEstado("ACTIVO");
         return fuente.stream().map(this::toEstablecimientoDTO).toList();
     }
@@ -68,6 +68,40 @@ public class EstablecimientoService {
                 .toList();
     }
 
+    public CursoDTO crearCurso(Integer idEstablecimiento, CursoDTO request) {
+        Curso curso = new Curso();
+        curso.setIdEstablecimiento(idEstablecimiento);
+        curso.setNumero(request.getNumero());
+        curso.setLetra(request.getLetra());
+        curso.setTipoEnsenanza(request.getTipoEnsenanza());
+        curso.setModalidad(request.getModalidad());
+        curso.setAnioAcademico(request.getAnioAcademico());
+        curso.setEsNivelSimce(request.getEsNivelSimce() != null ? request.getEsNivelSimce() : false);
+        curso.setEstado(request.getEstado() != null ? request.getEstado() : "ACTIVO");
+        return toCursoDTO(cursoRepository.save(curso));
+    }
+
+    public Optional<CursoDTO> actualizarCurso(Integer idEstablecimiento, Integer idCurso, CursoDTO request) {
+        return cursoRepository.findById(idCurso)
+                .filter(c -> c.getIdEstablecimiento().equals(idEstablecimiento))
+                .map(c -> {
+                    if (request.getNumero() != null) c.setNumero(request.getNumero());
+                    if (request.getLetra() != null) c.setLetra(request.getLetra());
+                    if (request.getTipoEnsenanza() != null) c.setTipoEnsenanza(request.getTipoEnsenanza());
+                    if (request.getModalidad() != null) c.setModalidad(request.getModalidad());
+                    if (request.getAnioAcademico() != null) c.setAnioAcademico(request.getAnioAcademico());
+                    if (request.getEsNivelSimce() != null) c.setEsNivelSimce(request.getEsNivelSimce());
+                    if (request.getEstado() != null) c.setEstado(request.getEstado());
+                    return toCursoDTO(cursoRepository.save(c));
+                });
+    }
+
+    public void eliminarCurso(Integer idEstablecimiento, Integer idCurso) {
+        cursoRepository.findById(idCurso)
+                .filter(c -> c.getIdEstablecimiento().equals(idEstablecimiento))
+                .ifPresent(cursoRepository::delete);
+    }
+
     public List<AsignaturaDTO> listarAsignaturas(Integer idEstablecimiento) {
         return asignaturaRepository.findByIdEstablecimiento(idEstablecimiento)
                 .stream()
@@ -93,7 +127,6 @@ public class EstablecimientoService {
         dto.setAnioAcademico(c.getAnioAcademico());
         dto.setEsNivelSimce(c.getEsNivelSimce());
         dto.setEstado(c.getEstado());
-        // nombre calculado: "1° Básica A"
         dto.setNombre(c.getNumero() + "° " + c.getTipoEnsenanza() + " " + c.getLetra().trim());
         return dto;
     }
