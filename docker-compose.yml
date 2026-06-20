@@ -62,6 +62,20 @@ services:
       postgres:
         condition: service_healthy
 
+  academico-service:
+    build:
+      context: ./academico-service/academico-service
+    container_name: academico-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/colegio_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   bff-gateway:
     build:
       context: ./bff-gateway/bff-gateway
