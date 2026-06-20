@@ -1,6 +1,7 @@
 package com.colegio.asistencia.controller;
 
 import com.colegio.asistencia.dto.AsistenciaDTO;
+import com.colegio.asistencia.dto.ResumenAsistenciaDTO;
 import com.colegio.asistencia.service.AsistenciaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,15 @@ public class AsistenciaController {
             @PathVariable LocalDate fecha) {
         return ResponseEntity.ok(
                 service.obtenerPorEstudianteYFecha(idEstudiante, fecha)
+        );
+    }
+
+    // GET /asistencia/estudiante/5/resumen
+    @GetMapping("/estudiante/{idEstudiante}/resumen")
+    public ResponseEntity<ResumenAsistenciaDTO> obtenerResumen(
+            @PathVariable Integer idEstudiante) {
+        return ResponseEntity.ok(
+                service.calcularResumen(idEstudiante)
         );
     }
 
