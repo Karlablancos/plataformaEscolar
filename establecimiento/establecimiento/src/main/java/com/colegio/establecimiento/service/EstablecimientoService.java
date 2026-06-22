@@ -4,15 +4,19 @@ import com.colegio.establecimiento.dto.AsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
+import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.model.Asignatura;
 import com.colegio.establecimiento.model.Curso;
 import com.colegio.establecimiento.model.Establecimiento;
 import com.colegio.establecimiento.model.Estudiante;
+import com.colegio.establecimiento.model.TipoCalificacion;
 import com.colegio.establecimiento.repository.AsignaturaRepository;
 import com.colegio.establecimiento.repository.CursoRepository;
 import com.colegio.establecimiento.repository.EstablecimientoRepository;
 import com.colegio.establecimiento.repository.EstudianteRepository;
+import com.colegio.establecimiento.repository.TipoCalificacionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +30,7 @@ public class EstablecimientoService {
     private final CursoRepository cursoRepository;
     private final AsignaturaRepository asignaturaRepository;
     private final EstudianteRepository estudianteRepository;
+    private final TipoCalificacionRepository tipoCalificacionRepository;
 
     public List<EstablecimientoDTO> listarTodos(Integer idEstablecimiento) {
         List<Establecimiento> fuente = (idEstablecimiento != null)
@@ -73,6 +78,102 @@ public class EstablecimientoService {
                 .stream()
                 .map(this::toAsignaturaDTO)
                 .toList();
+    }
+
+    public List<TipoCalificacionDTO> listarTiposCalificacion() {
+        return tipoCalificacionRepository.findAll()
+                .stream()
+                .map(this::toTipoCalificacionDTO)
+                .toList();
+    }
+
+    public AsignaturaDTO crearAsignatura(Integer idEstablecimiento, AsignaturaDTO dto) {
+        validarEstablecimiento(idEstablecimiento);
+        validarTipoCalificacion(dto.getIdTipoCalificacion());
+        validarDatosAsignatura(dto);
+
+        Asignatura asignatura = new Asignatura();
+        asignatura.setIdEstablecimiento(idEstablecimiento);
+        asignatura.setNombre(dto.getNombre().trim());
+        asignatura.setCodigo(dto.getCodigo().trim().toUpperCase());
+        asignatura.setIdTipoCalificacion(dto.getIdTipoCalificacion());
+        asignatura.setEstado(normalizarEstado(dto.getEstado()));
+
+        return toAsignaturaDTO(asignaturaRepository.save(asignatura));
+    }
+
+    public Optional<AsignaturaDTO> actualizarAsignatura(
+            Integer idEstablecimiento, Integer idAsignatura, AsignaturaDTO dto) {
+        return asignaturaRepository.findByIdAsignaturaAndIdEstablecimiento(idAsignatura, idEstablecimiento)
+                .map(asignatura -> {
+                    validarTipoCalificacion(dto.getIdTipoCalificacion());
+                    validarDatosAsignatura(dto);
+                    asignatura.setNombre(dto.getNombre().trim());
+                    asignatura.setCodigo(dto.getCodigo().trim().toUpperCase());
+                    asignatura.setIdTipoCalificacion(dto.getIdTipoCalificacion());
+                    asignatura.setEstado(normalizarEstado(dto.getEstado()));
+                    return toAsignaturaDTO(asignaturaRepository.save(asignatura));
+                });
+    }
+
+    public boolean eliminarAsignatura(Integer idEstablecimiento, Integer idAsignatura) {
+        Optional<Asignatura> asignatura = asignaturaRepository
+                .findByIdAsignaturaAndIdEstablecimiento(idAsignatura, idEstablecimiento);
+
+        if (asignatura.isEmpty()) {
+            return false;
+        }
+
+        try {
+            asignaturaRepository.delete(asignatura.get());
+            return true;
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar la asignatura porque está asociada a cursos o evaluaciones.");
+        }
+    }
+
+    private void validarEstablecimiento(Integer idEstablecimiento) {
+        if (!establecimientoRepository.existsById(idEstablecimiento)) {
+            throw new IllegalArgumentException("Establecimiento no encontrado: " + idEstablecimiento);
+        }
+    }
+
+    private void validarTipoCalificacion(Integer idTipoCalificacion) {
+        if (idTipoCalificacion == null
+                || !tipoCalificacionRepository.existsById(idTipoCalificacion)) {
+            throw new IllegalArgumentException("Tipo de calificación no válido.");
+        }
+    }
+
+    private void validarDatosAsignatura(AsignaturaDTO dto) {
+        if (dto.getNombre() == null || dto.getNombre().isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio.");
+        }
+        if (dto.getCodigo() == null || dto.getCodigo().isBlank()) {
+            throw new IllegalArgumentException("El código es obligatorio.");
+        }
+    }
+
+    private String normalizarEstado(String estado) {
+        if (estado == null || estado.isBlank()) {
+            return "ACTIVO";
+        }
+        String normalizado = estado.trim().toUpperCase();
+        if (normalizado.startsWith("INACTIV")) {
+            return "INACTIVO";
+        }
+        return "ACTIVO";
+    }
+
+    private TipoCalificacionDTO toTipoCalificacionDTO(TipoCalificacion tipo) {
+        TipoCalificacionDTO dto = new TipoCalificacionDTO();
+        dto.setIdTipoCalificacion(tipo.getIdTipoCalificacion());
+        dto.setNombre(tipo.getNombre());
+        dto.setEscala(tipo.getEscala());
+        dto.setEntraPromedio(tipo.getEntraPromedio());
+        dto.setMinimoAprobacion(tipo.getMinimoAprobacion());
+        return dto;
     }
 
     public List<EstudianteDTO> listarEstudiantes(Integer idEstablecimiento) {

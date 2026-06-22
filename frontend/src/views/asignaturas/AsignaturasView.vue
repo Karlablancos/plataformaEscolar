@@ -15,6 +15,11 @@
       </button>
     </div>
 
+    <div v-if="mensajeError" class="alert alert-danger alert-dismissible fade show">
+      {{ mensajeError }}
+      <button type="button" class="btn-close" @click="mensajeError = ''"></button>
+    </div>
+
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-body">
         <div class="row g-3 align-items-end">
@@ -47,7 +52,12 @@
 
     <div class="card border-0 shadow-sm">
       <div class="card-body">
-        <div class="table-responsive">
+        <div v-if="asignaturasStore.cargando" class="text-center py-5">
+          <span class="spinner-border text-primary" role="status"></span>
+          <p class="text-muted mt-2 mb-0">Cargando asignaturas...</p>
+        </div>
+
+        <div v-else class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
@@ -238,7 +248,10 @@
                 Cancelar
               </button>
 
-              <button type="submit" class="btn btn-success btn-rounded">Guardar</button>
+              <button type="submit" class="btn btn-success btn-rounded" :disabled="guardando">
+                <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
+                Guardar
+              </button>
             </div>
           </form>
         </div>
@@ -248,7 +261,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useAsignaturasStore } from '@/stores/asignaturasStore'
 
 const asignaturasStore = useAsignaturasStore()
@@ -258,6 +271,8 @@ const filtroTipoCalificacion = ref('')
 const modalAbierto = ref(false)
 const modoEdicion = ref(false)
 const asignaturaEditandoId = ref(null)
+const guardando = ref(false)
+const mensajeError = ref('')
 
 const form = reactive({
   nombre: '',
@@ -328,7 +343,13 @@ const cerrarModal = () => {
   resetForm()
 }
 
-const guardarAsignatura = () => {
+const extraerMensajeError = (error) =>
+  error?.response?.data?.mensaje ||
+  error?.response?.data?.message ||
+  error?.message ||
+  'Ocurrió un error al procesar la solicitud.'
+
+const guardarAsignatura = async () => {
   const data = {
     nombre: form.nombre.trim(),
     codigo: form.codigo.trim().toUpperCase(),
@@ -336,22 +357,43 @@ const guardarAsignatura = () => {
     estado: form.estado,
   }
 
-  if (modoEdicion.value && asignaturaEditandoId.value) {
-    asignaturasStore.actualizarAsignatura(asignaturaEditandoId.value, data)
-  } else {
-    asignaturasStore.agregarAsignatura(data)
-  }
+  guardando.value = true
+  mensajeError.value = ''
 
-  cerrarModal()
+  try {
+    if (modoEdicion.value && asignaturaEditandoId.value) {
+      await asignaturasStore.actualizarAsignatura(asignaturaEditandoId.value, data)
+    } else {
+      await asignaturasStore.agregarAsignatura(data)
+    }
+
+    cerrarModal()
+  } catch (error) {
+    mensajeError.value = extraerMensajeError(error)
+  } finally {
+    guardando.value = false
+  }
 }
 
-const eliminarAsignatura = (asignatura) => {
+const eliminarAsignatura = async (asignatura) => {
   const confirmacion = window.confirm(
     `¿Seguro que deseas eliminar la asignatura "${asignatura.nombre}"?`,
   )
 
   if (!confirmacion) return
 
-  asignaturasStore.eliminarAsignatura(asignatura.id_asignatura)
+  mensajeError.value = ''
+
+  try {
+    await asignaturasStore.eliminarAsignatura(asignatura.id_asignatura)
+  } catch (error) {
+    mensajeError.value = extraerMensajeError(error)
+  }
 }
+
+onMounted(() => {
+  asignaturasStore.cargarDatos().catch(() => {
+    mensajeError.value = 'No se pudieron cargar las asignaturas desde el servidor.'
+  })
+})
 </script>
