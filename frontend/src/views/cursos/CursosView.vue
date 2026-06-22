@@ -1,22 +1,28 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
-import { useAcademicStore } from '@/stores/academicStore'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
+import { useCursosStore } from '@/stores/cursosStore'
 
-const academic = useAcademicStore()
+const cursosStore = useCursosStore()
+const route = useRoute()
 
-const cursos = computed(() => academic.cursosFiltradosNormalizados)
+const cursos = computed(() => cursosStore.cursosFiltradosNormalizados)
 
 const showModal = ref(false)
 const modoEdicion = ref(false)
 const cursoEditandoId = ref(null)
+const guardando = ref(false)
+const mensajeError = ref('')
+
+const cursoDetallePath = (id) =>
+  route.path.startsWith('/profesor') ? `/profesor/cursos/${id}` : `/admin/cursos/${id}`
 
 const form = reactive({
   numero: '',
   letra: '',
   tipo_ensenanza: '',
   modalidad: 'Regular',
-  anio_academico: academic.anioActivo,
+  anio_academico: cursosStore.anioActivo,
   es_nivel_since: false,
   estado: 'Activo',
 })
@@ -30,7 +36,7 @@ const abrirNuevoCurso = () => {
     letra: '',
     tipo_ensenanza: '',
     modalidad: 'Regular',
-    anio_academico: academic.anioActivo,
+    anio_academico: cursosStore.anioActivo,
     es_nivel_since: false,
     estado: 'Activo',
   })
@@ -47,7 +53,7 @@ const abrirEditarCurso = (curso) => {
     letra: curso.letra || '',
     tipo_ensenanza: curso.tipo_ensenanza || '',
     modalidad: curso.modalidad || 'Regular',
-    anio_academico: curso.anio_academico || curso.anio || academic.anioActivo,
+    anio_academico: curso.anio_academico || curso.anio || cursosStore.anioActivo,
     es_nivel_since: Boolean(curso.es_nivel_since),
     estado: curso.estado || 'Activo',
   })
@@ -59,7 +65,13 @@ const cerrarModal = () => {
   showModal.value = false
 }
 
-const guardarCurso = () => {
+const extraerMensajeError = (error) =>
+  error?.response?.data?.mensaje ||
+  error?.response?.data?.message ||
+  error?.message ||
+  'Ocurrió un error al procesar la solicitud.'
+
+const guardarCurso = async () => {
   if (!form.numero || !form.letra || !form.tipo_ensenanza) {
     alert('Completa número, letra y tipo de enseñanza.')
     return
@@ -71,22 +83,43 @@ const guardarCurso = () => {
     anio_academico: Number(form.anio_academico),
   }
 
-  if (modoEdicion.value) {
-    academic.actualizarCurso(cursoEditandoId.value, data)
-  } else {
-    academic.agregarCurso(data)
-  }
+  guardando.value = true
+  mensajeError.value = ''
 
-  cerrarModal()
+  try {
+    if (modoEdicion.value) {
+      await cursosStore.actualizarCurso(cursoEditandoId.value, data)
+    } else {
+      await cursosStore.agregarCurso(data)
+    }
+
+    cerrarModal()
+  } catch (error) {
+    mensajeError.value = extraerMensajeError(error)
+  } finally {
+    guardando.value = false
+  }
 }
 
-const eliminarCurso = (curso) => {
+const eliminarCurso = async (curso) => {
   const confirmar = confirm(`¿Seguro que deseas eliminar el curso ${curso.nombre}?`)
 
   if (!confirmar) return
 
-  academic.eliminarCurso(curso.id)
+  mensajeError.value = ''
+
+  try {
+    await cursosStore.eliminarCurso(curso.id)
+  } catch (error) {
+    mensajeError.value = extraerMensajeError(error)
+  }
 }
+
+onMounted(() => {
+  cursosStore.cargarCursos().catch(() => {
+    mensajeError.value = 'No se pudieron cargar los cursos desde el servidor.'
+  })
+})
 </script>
 
 <template>
@@ -95,7 +128,7 @@ const eliminarCurso = (curso) => {
       <div>
         <h1 class="h3 mb-1 page-title"><i class="bi bi-easel"></i> Cursos</h1>
         <p class="text-muted mb-0">
-          Administración de cursos del año académico {{ academic.anioActivo }}.
+          Administración de cursos del año académico {{ cursosStore.anioActivo }}.
         </p>
       </div>
 
@@ -105,8 +138,18 @@ const eliminarCurso = (curso) => {
       </button>
     </div>
 
+    <div v-if="mensajeError" class="alert alert-danger alert-dismissible fade show">
+      {{ mensajeError }}
+      <button type="button" class="btn-close" @click="mensajeError = ''"></button>
+    </div>
+
     <div class="card">
-      <div class="table-responsive">
+      <div v-if="cursosStore.cargando" class="text-center py-5">
+        <span class="spinner-border text-primary" role="status"></span>
+        <p class="text-muted mt-2 mb-0">Cargando cursos...</p>
+      </div>
+
+      <div v-else class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
@@ -151,7 +194,7 @@ const eliminarCurso = (curso) => {
               <td class="text-end">
                 <div class="d-flex justify-content-end gap-2">
                   <RouterLink
-                    :to="`/admin/cursos/${curso.id}`"
+                    :to="cursoDetallePath(curso.id)"
                     class="btn btn-primary btn-sm btn-rounded"
                   >
                     Configurar
@@ -171,7 +214,7 @@ const eliminarCurso = (curso) => {
               </td>
             </tr>
 
-            <tr v-if="cursos.length === 0">
+            <tr v-if="cursos.length === 0 && !cursosStore.cargando">
               <td colspan="7" class="text-center text-muted py-4">
                 No hay cursos registrados para este año académico.
               </td>
@@ -284,7 +327,10 @@ const eliminarCurso = (curso) => {
                 Cancelar
               </button>
 
-              <button type="submit" class="btn btn-success btn-rounded">Guardar</button>
+              <button type="submit" class="btn btn-success btn-rounded" :disabled="guardando">
+                <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
+                Guardar
+              </button>
             </div>
           </form>
         </div>

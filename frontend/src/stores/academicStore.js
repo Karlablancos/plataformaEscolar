@@ -125,15 +125,15 @@ export const useAcademicStore = defineStore('academic', {
     },
 
     agregarCurso(data) {
-      useCursosStore().agregarCurso(data)
+      return useCursosStore().agregarCurso(data)
     },
 
     actualizarCurso(id, data) {
-      useCursosStore().actualizarCurso(id, data)
+      return useCursosStore().actualizarCurso(id, data)
     },
 
-    eliminarCurso(id) {
-      useCursosStore().eliminarCurso(id)
+    async eliminarCurso(id) {
+      await useCursosStore().eliminarCurso(id)
 
       const asignaturasStore = useAsignaturasStore()
 

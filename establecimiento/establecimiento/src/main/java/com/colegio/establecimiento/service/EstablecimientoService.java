@@ -73,6 +73,94 @@ public class EstablecimientoService {
                 .toList();
     }
 
+    public CursoDTO crearCurso(Integer idEstablecimiento, CursoDTO dto) {
+        validarEstablecimiento(idEstablecimiento);
+        validarDatosCurso(dto);
+
+        Curso curso = new Curso();
+        curso.setIdEstablecimiento(idEstablecimiento);
+        curso.setNumero(dto.getNumero());
+        curso.setLetra(dto.getLetra().trim().toUpperCase());
+        curso.setTipoEnsenanza(dto.getTipoEnsenanza().trim());
+        curso.setModalidad(dto.getModalidad().trim());
+        curso.setAnioAcademico(dto.getAnioAcademico());
+        curso.setEsNivelSimce(Boolean.TRUE.equals(dto.getEsNivelSimce()));
+        curso.setEstado(normalizarEstadoCurso(dto.getEstado()));
+
+        return toCursoDTO(cursoRepository.save(curso));
+    }
+
+    public Optional<CursoDTO> actualizarCurso(
+            Integer idEstablecimiento, Integer idCurso, CursoDTO dto) {
+        return cursoRepository.findByIdCursoAndIdEstablecimiento(idCurso, idEstablecimiento)
+                .map(curso -> {
+                    validarDatosCurso(dto);
+                    curso.setNumero(dto.getNumero());
+                    curso.setLetra(dto.getLetra().trim().toUpperCase());
+                    curso.setTipoEnsenanza(dto.getTipoEnsenanza().trim());
+                    curso.setModalidad(dto.getModalidad().trim());
+                    curso.setAnioAcademico(dto.getAnioAcademico());
+                    curso.setEsNivelSimce(Boolean.TRUE.equals(dto.getEsNivelSimce()));
+                    curso.setEstado(normalizarEstadoCurso(dto.getEstado()));
+                    return toCursoDTO(cursoRepository.save(curso));
+                });
+    }
+
+    public boolean eliminarCurso(Integer idEstablecimiento, Integer idCurso) {
+        Optional<Curso> curso = cursoRepository
+                .findByIdCursoAndIdEstablecimiento(idCurso, idEstablecimiento);
+
+        if (curso.isEmpty()) {
+            return false;
+        }
+
+        try {
+            cursoRepository.delete(curso.get());
+            return true;
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar el curso porque tiene alumnos, asignaturas o evaluaciones asociadas.");
+        }
+    }
+
+    private void validarEstablecimiento(Integer idEstablecimiento) {
+        if (!establecimientoRepository.existsById(idEstablecimiento)) {
+            throw new IllegalArgumentException("Establecimiento no encontrado: " + idEstablecimiento);
+        }
+    }
+
+    private void validarDatosCurso(CursoDTO dto) {
+        if (dto.getNumero() == null || dto.getNumero() < 1) {
+            throw new IllegalArgumentException("El número del curso es obligatorio.");
+        }
+        if (dto.getLetra() == null || dto.getLetra().isBlank()) {
+            throw new IllegalArgumentException("La letra del curso es obligatoria.");
+        }
+        if (dto.getTipoEnsenanza() == null || dto.getTipoEnsenanza().isBlank()) {
+            throw new IllegalArgumentException("El tipo de enseñanza es obligatorio.");
+        }
+        if (dto.getModalidad() == null || dto.getModalidad().isBlank()) {
+            throw new IllegalArgumentException("La modalidad es obligatoria.");
+        }
+        if (dto.getAnioAcademico() == null) {
+            throw new IllegalArgumentException("El año académico es obligatorio.");
+        }
+    }
+
+    private String normalizarEstadoCurso(String estado) {
+        if (estado == null || estado.isBlank()) {
+            return "ACTIVO";
+        }
+        String normalizado = estado.trim().toUpperCase();
+        if (normalizado.startsWith("INACTIV")) {
+            return "INACTIVO";
+        }
+        if (normalizado.startsWith("CERRAD")) {
+            return "CERRADO";
+        }
+        return "ACTIVO";
+    }
+
     public List<AsignaturaDTO> listarAsignaturas(Integer idEstablecimiento) {
         return asignaturaRepository.findByIdEstablecimiento(idEstablecimiento)
                 .stream()
@@ -130,12 +218,6 @@ public class EstablecimientoService {
         } catch (DataIntegrityViolationException ex) {
             throw new IllegalArgumentException(
                     "No se puede eliminar la asignatura porque está asociada a cursos o evaluaciones.");
-        }
-    }
-
-    private void validarEstablecimiento(Integer idEstablecimiento) {
-        if (!establecimientoRepository.existsById(idEstablecimiento)) {
-            throw new IllegalArgumentException("Establecimiento no encontrado: " + idEstablecimiento);
         }
     }
 

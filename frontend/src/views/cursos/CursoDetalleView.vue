@@ -1,10 +1,16 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAcademicStore } from '@/stores/academicStore'
+import { useCursosStore } from '@/stores/cursosStore'
 
 const route = useRoute()
 const academic = useAcademicStore()
+const cursosStore = useCursosStore()
+
+onMounted(() => {
+  cursosStore.cargarCursos().catch(() => {})
+})
 
 const tabActiva = ref('estudiantes')
 

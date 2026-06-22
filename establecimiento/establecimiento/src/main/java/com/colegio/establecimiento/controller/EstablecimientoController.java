@@ -63,6 +63,33 @@ public class EstablecimientoController {
         return ResponseEntity.ok(establecimientoService.listarCursos(id));
     }
 
+    @PostMapping("/{id}/cursos")
+    public ResponseEntity<CursoDTO> crearCurso(
+            @PathVariable Integer id,
+            @RequestBody CursoDTO dto) {
+        return ResponseEntity.ok(establecimientoService.crearCurso(id, dto));
+    }
+
+    @PutMapping("/{id}/cursos/{idCurso}")
+    public ResponseEntity<CursoDTO> actualizarCurso(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso,
+            @RequestBody CursoDTO dto) {
+        return establecimientoService.actualizarCurso(id, idCurso, dto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}/cursos/{idCurso}")
+    public ResponseEntity<Void> eliminarCurso(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso) {
+        if (!establecimientoService.eliminarCurso(id, idCurso)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}/asignaturas")
     public ResponseEntity<List<AsignaturaDTO>> listarAsignaturas(@PathVariable Integer id) {
         return ResponseEntity.ok(establecimientoService.listarAsignaturas(id));
