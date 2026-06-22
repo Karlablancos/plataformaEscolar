@@ -4,6 +4,7 @@ import com.colegio.establecimiento.dto.AsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
+import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.service.EstablecimientoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +53,11 @@ public class EstablecimientoController {
         return ResponseEntity.ok(establecimientoService.existeRbd(rbd));
     }
 
+    @GetMapping("/tipos-calificacion")
+    public ResponseEntity<List<TipoCalificacionDTO>> listarTiposCalificacion() {
+        return ResponseEntity.ok(establecimientoService.listarTiposCalificacion());
+    }
+
     @GetMapping("/{id}/cursos")
     public ResponseEntity<List<CursoDTO>> listarCursos(@PathVariable Integer id) {
         return ResponseEntity.ok(establecimientoService.listarCursos(id));
@@ -60,6 +66,33 @@ public class EstablecimientoController {
     @GetMapping("/{id}/asignaturas")
     public ResponseEntity<List<AsignaturaDTO>> listarAsignaturas(@PathVariable Integer id) {
         return ResponseEntity.ok(establecimientoService.listarAsignaturas(id));
+    }
+
+    @PostMapping("/{id}/asignaturas")
+    public ResponseEntity<AsignaturaDTO> crearAsignatura(
+            @PathVariable Integer id,
+            @RequestBody AsignaturaDTO dto) {
+        return ResponseEntity.ok(establecimientoService.crearAsignatura(id, dto));
+    }
+
+    @PutMapping("/{id}/asignaturas/{idAsignatura}")
+    public ResponseEntity<AsignaturaDTO> actualizarAsignatura(
+            @PathVariable Integer id,
+            @PathVariable Integer idAsignatura,
+            @RequestBody AsignaturaDTO dto) {
+        return establecimientoService.actualizarAsignatura(id, idAsignatura, dto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}/asignaturas/{idAsignatura}")
+    public ResponseEntity<Void> eliminarAsignatura(
+            @PathVariable Integer id,
+            @PathVariable Integer idAsignatura) {
+        if (!establecimientoService.eliminarAsignatura(id, idAsignatura)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/estudiantes")

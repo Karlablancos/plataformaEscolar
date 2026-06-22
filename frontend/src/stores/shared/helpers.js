@@ -6,14 +6,22 @@ export const getEstablecimientoId = () => {
   const user = auth.user
   const establecimiento = user?.establecimiento
 
-  return (
+  const fromUser =
     user?.establecimientoId ??
     user?.id_establecimiento ??
     establecimiento?.id_establecimiento ??
     establecimiento?.establecimientoId ??
     establecimiento?.id ??
     null
-  )
+
+  if (fromUser != null) return Number(fromUser)
+
+  try {
+    const activo = JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')
+    return activo?.idEstablecimiento != null ? Number(activo.idEstablecimiento) : null
+  } catch {
+    return null
+  }
 }
 
 export const getCursoId = (curso) => curso.id_curso ?? curso.id

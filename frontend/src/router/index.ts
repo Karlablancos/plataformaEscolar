@@ -19,6 +19,10 @@ import ProfesorDetailView from '../views/profesores/ProfesorDetailView.vue'
 
 import AsignaturasView from '../views/asignaturas/AsignaturasView.vue'
 
+import EvaluacionesView from '../views/academico/EvaluacionesView.vue'
+import LibroNotasView from '../views/academico/LibroNotasView.vue'
+import PromocionView from '../views/academico/PromocionView.vue'
+
 const routes = [
   {
     path: '/',
@@ -121,6 +125,21 @@ const routes = [
         name: 'asignaturas',
         component: AsignaturasView,
       },
+      {
+        path: 'academico/evaluaciones',
+        name: 'evaluaciones',
+        component: EvaluacionesView,
+      },
+      {
+        path: 'academico/libro-notas',
+        name: 'libro-notas',
+        component: LibroNotasView,
+      },
+      {
+        path: 'academico/promocion',
+        name: 'promocion',
+        component: PromocionView,
+      },
     ],
   },
 
@@ -160,6 +179,21 @@ const routes = [
         path: 'cursos/:id',
         name: 'profesor-curso-detalle',
         component: CursoDetalleView,
+      },
+      {
+        path: 'academico/evaluaciones',
+        name: 'profesor-evaluaciones',
+        component: EvaluacionesView,
+      },
+      {
+        path: 'academico/libro-notas',
+        name: 'profesor-libro-notas',
+        component: LibroNotasView,
+      },
+      {
+        path: 'academico/promocion',
+        name: 'profesor-promocion',
+        component: PromocionView,
       },
     ],
   },
