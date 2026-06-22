@@ -29,6 +29,14 @@ public class AnotacionService {
                 .toList();
     }
 
+
+    public List<AnotacionDTO> listarCitacionesPendientes() {
+        return anotacionRepository.findByRequiereCitacionTrueAndFechaCitacionIsNull()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     public AnotacionDTO crear(AnotacionDTO request) {
         Anotacion anotacion = new Anotacion();
         anotacion.setIdEstudiante(request.getIdEstudiante());

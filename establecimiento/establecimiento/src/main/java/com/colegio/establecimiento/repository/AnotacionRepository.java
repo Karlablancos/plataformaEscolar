@@ -11,4 +11,7 @@ public interface AnotacionRepository extends JpaRepository<Anotacion, Integer> {
     List<Anotacion> findByIdEstudiante(Integer idEstudiante);
 
     List<Anotacion> findByIdDocente(Integer idDocente);
+
+
+    List<Anotacion> findByRequiereCitacionTrueAndFechaCitacionIsNull();
 }
