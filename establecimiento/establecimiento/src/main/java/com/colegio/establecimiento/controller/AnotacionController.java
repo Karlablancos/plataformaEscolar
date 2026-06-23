@@ -25,7 +25,7 @@ public class AnotacionController {
     public ResponseEntity<List<AnotacionDTO>> listarPorDocente(@PathVariable Integer idDocente) {
         return ResponseEntity.ok(anotacionService.listarPorDocente(idDocente));
     }
-    
+
     @GetMapping("/citaciones-pendientes")
     public ResponseEntity<List<AnotacionDTO>> listarCitacionesPendientes() {
         return ResponseEntity.ok(anotacionService.listarCitacionesPendientes());

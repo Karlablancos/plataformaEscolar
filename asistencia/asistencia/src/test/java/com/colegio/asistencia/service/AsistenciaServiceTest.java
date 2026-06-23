@@ -1,6 +1,7 @@
 package com.colegio.asistencia.service;
 
 import com.colegio.asistencia.dto.AsistenciaDTO;
+import com.colegio.asistencia.dto.ResumenAsistenciaDTO;
 import com.colegio.asistencia.model.Asistencia;
 import com.colegio.asistencia.repository.AsistenciaRepository;
 import org.junit.jupiter.api.Test;
@@ -134,4 +135,97 @@ class AsistenciaServiceTest {
         assertEquals("ATRASADO", resultado.getEstadoAsistencia());
         assertFalse(resultado.getJustificada());
     }
+    private Asistencia asistenciaConEstado(String estado, Boolean justificada) {
+        Asistencia a = new Asistencia();
+        a.setIdEstudiante(1);
+        a.setFecha(LocalDate.of(2026, 5, 14));
+        a.setEstadoAsistencia(estado);
+        a.setJustificada(justificada);
+        return a;
+    }
+
+    @Test
+    void calcularResumen_conTodasPresentes_debeCumplir85() {
+        List<Asistencia> asistencias = List.of(
+                asistenciaConEstado("PRESENTE", false),
+                asistenciaConEstado("PRESENTE", false),
+                asistenciaConEstado("PRESENTE", false)
+        );
+        when(repository.findByIdEstudiante(1)).thenReturn(asistencias);
+
+        ResumenAsistenciaDTO resumen = service.calcularResumen(1);
+
+        assertEquals(3, resumen.getTotalClases());
+        assertEquals(3, resumen.getPresentes());
+        assertEquals(3, resumen.getAsistenciaValida());
+        assertEquals(100.0, resumen.getPorcentajeAsistencia());
+        assertTrue(resumen.getCumple85());
+        verify(repository).findByIdEstudiante(1);
+    }
+
+    @Test
+    void calcularResumen_conAusenciaJustificada_debeContarComoValida() {
+        List<Asistencia> asistencias = List.of(
+                asistenciaConEstado("PRESENTE", false),
+                asistenciaConEstado("AUSENTE", true)
+        );
+        when(repository.findByIdEstudiante(1)).thenReturn(asistencias);
+
+        ResumenAsistenciaDTO resumen = service.calcularResumen(1);
+
+        assertEquals(2, resumen.getTotalClases());
+        assertEquals(1, resumen.getAusenciasJustificadas());
+        assertEquals(0, resumen.getAusenciasInjustificadas());
+        assertEquals(2, resumen.getAsistenciaValida());
+        assertEquals(100.0, resumen.getPorcentajeAsistencia());
+        assertTrue(resumen.getCumple85());
+    }
+
+    @Test
+    void calcularResumen_conAusenciasInjustificadas_noDebeCumplir85() {
+        List<Asistencia> asistencias = List.of(
+                asistenciaConEstado("PRESENTE", false),
+                asistenciaConEstado("AUSENTE", false),
+                asistenciaConEstado("AUSENTE", false),
+                asistenciaConEstado("AUSENTE", false)
+        );
+        when(repository.findByIdEstudiante(1)).thenReturn(asistencias);
+
+        ResumenAsistenciaDTO resumen = service.calcularResumen(1);
+
+        assertEquals(4, resumen.getTotalClases());
+        assertEquals(3, resumen.getAusenciasInjustificadas());
+        assertEquals(1, resumen.getAsistenciaValida());
+        assertEquals(25.0, resumen.getPorcentajeAsistencia());
+        assertFalse(resumen.getCumple85());
+    }
+
+    @Test
+    void calcularResumen_conAtrasos_debeContarComoAsistenciaValida() {
+        List<Asistencia> asistencias = List.of(
+                asistenciaConEstado("PRESENTE", false),
+                asistenciaConEstado("ATRASADO", false)
+        );
+        when(repository.findByIdEstudiante(1)).thenReturn(asistencias);
+
+        ResumenAsistenciaDTO resumen = service.calcularResumen(1);
+
+        assertEquals(1, resumen.getAtrasos());
+        assertEquals(2, resumen.getAsistenciaValida());
+        assertEquals(100.0, resumen.getPorcentajeAsistencia());
+        assertTrue(resumen.getCumple85());
+    }
+
+    @Test
+    void calcularResumen_sinRegistros_debeRetornarCeroYNoCumplir() {
+        when(repository.findByIdEstudiante(1)).thenReturn(List.of());
+
+        ResumenAsistenciaDTO resumen = service.calcularResumen(1);
+
+        assertEquals(0, resumen.getTotalClases());
+        assertEquals(0.0, resumen.getPorcentajeAsistencia());
+        assertFalse(resumen.getCumple85());
+    }
+
+
 }
