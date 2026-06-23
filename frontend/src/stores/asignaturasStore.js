@@ -1,13 +1,11 @@
 import { defineStore } from 'pinia'
 import api from '@/api/axios'
-import { docenteAsignaturaCursoMock } from '../data'
-
-import { loadFromStorage, saveToStorage } from './shared/persistence'
 import {
   getEstablecimientoId,
   getAsignaturaId,
   getAsignaturaEstablecimientoId,
 } from './shared/helpers'
+import { mapCursoAsignaturaFromApi } from './shared/cursoAsignaturaMapper'
 
 const resolveEstablecimientoId = () => {
   return (
@@ -79,7 +77,8 @@ export const useAsignaturasStore = defineStore('asignaturas', {
   state: () => ({
     asignaturas: [],
     tiposCalificacion: [],
-    docenteAsignaturaCurso: loadFromStorage('docenteAsignaturaCurso', docenteAsignaturaCursoMock),
+    asignaturasPorCurso: {},
+    docenteAsignaturaCurso: [],
     cargando: false,
     error: null,
   }),
@@ -142,28 +141,37 @@ export const useAsignaturasStore = defineStore('asignaturas', {
     },
 
     getAsignaturasByCursoId: (state) => {
-      return (cursoId, anioActivo) => {
-        const cursoIdNumber = Number(cursoId)
+      return (cursoId) => state.asignaturasPorCurso[Number(cursoId)] || []
+    },
 
-        return state.docenteAsignaturaCurso.filter((item) => {
-          const mismoCurso = item.cursoId === cursoIdNumber || item.id_curso === cursoIdNumber
-          const mismoAnio = anioActivo
-            ? item.anioAcademico === anioActivo || item.anio_academico === anioActivo
-            : true
-
-          return mismoCurso && mismoAnio
-        })
-      }
+    getAsignaturasCurso: (state) => {
+      return (cursoId) => state.asignaturasPorCurso[Number(cursoId)] || []
     },
   },
 
   actions: {
-    persistirRelaciones() {
-      saveToStorage('docenteAsignaturaCurso', this.docenteAsignaturaCurso)
-    },
+    persistir() {},
 
-    persistir() {
-      this.persistirRelaciones()
+    async sincronizarAsignaturasCurso(cursoId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
+
+      if (!idEstablecimiento || !cursoIdNumber) {
+        throw new Error('No se encontró el establecimiento o curso activo.')
+      }
+
+      const { data } = await fetchWithRetry(() =>
+        api.get(`/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/asignaturas`),
+      )
+
+      const asignaturas = data.map(mapCursoAsignaturaFromApi)
+      this.asignaturasPorCurso = {
+        ...this.asignaturasPorCurso,
+        [cursoIdNumber]: asignaturas,
+      }
+
+      localStorage.removeItem('docenteAsignaturaCurso')
+      return asignaturas
     },
 
     async _fetchAsignaturas(idEstablecimiento) {
@@ -311,11 +319,15 @@ export const useAsignaturasStore = defineStore('asignaturas', {
           (asignatura) => getAsignaturaId(asignatura) !== asignaturaId,
         )
 
-        this.docenteAsignaturaCurso = this.docenteAsignaturaCurso.filter(
-          (item) => item.asignaturaId !== asignaturaId && item.id_asignatura !== asignaturaId,
+        this.asignaturasPorCurso = Object.fromEntries(
+          Object.entries(this.asignaturasPorCurso).map(([cursoKey, items]) => [
+            cursoKey,
+            items.filter(
+              (item) =>
+                item.asignaturaId !== asignaturaId && item.id_asignatura !== asignaturaId,
+            ),
+          ]),
         )
-
-        this.persistirRelaciones()
       } catch (error) {
         this.error = error
         throw error
@@ -324,94 +336,103 @@ export const useAsignaturasStore = defineStore('asignaturas', {
       }
     },
 
-    agregarAsignaturaACurso(cursoId, asignaturaId, docenteId, data = {}) {
+    async agregarAsignaturaACurso(cursoId, asignaturaId, docenteId, data = {}) {
+      const idEstablecimiento = resolveEstablecimientoId()
       const cursoIdNumber = Number(cursoId)
-      const asignaturaIdNumber = Number(asignaturaId)
 
-      const yaExiste = this.docenteAsignaturaCurso.some(
-        (item) =>
-          (item.cursoId === cursoIdNumber || item.id_curso === cursoIdNumber) &&
-          (item.asignaturaId === asignaturaIdNumber || item.id_asignatura === asignaturaIdNumber),
-      )
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
 
-      if (yaExiste) return
+      if (!docenteId) {
+        throw new Error('El docente responsable es obligatorio.')
+      }
 
-      this.docenteAsignaturaCurso.push({
-        id: Date.now(),
-        cursoId: cursoIdNumber,
-        asignaturaId: asignaturaIdNumber,
-        docenteId: docenteId ? Number(docenteId) : null,
-        anioAcademico: data.anioAcademico || data.anio_academico || new Date().getFullYear(),
-        id_curso: cursoIdNumber,
-        id_asignatura: asignaturaIdNumber,
-        id_docente: docenteId ? Number(docenteId) : null,
-        anio_academico: data.anioAcademico || data.anio_academico || new Date().getFullYear(),
-        horas_semanales: data.horas_semanales ? Number(data.horas_semanales) : null,
-        estado: data.estado || 'Activo',
-      })
+      this.cargando = true
+      this.error = null
 
-      this.persistirRelaciones()
+      try {
+        await api.post(`/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/asignaturas`, {
+          idAsignatura: Number(asignaturaId),
+          idDocente: Number(docenteId),
+          horasSemanales: data.horas_semanales ? Number(data.horas_semanales) : 4,
+        })
+
+        return this.sincronizarAsignaturasCurso(cursoIdNumber)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
     },
 
-    quitarAsignaturaDeCurso(cursoId, asignaturaId) {
+    async quitarAsignaturaDeCurso(cursoId, asignaturaId) {
+      const idEstablecimiento = resolveEstablecimientoId()
       const cursoIdNumber = Number(cursoId)
       const asignaturaIdNumber = Number(asignaturaId)
 
-      this.docenteAsignaturaCurso = this.docenteAsignaturaCurso.filter((item) => {
-        const mismoCurso = item.cursoId === cursoIdNumber || item.id_curso === cursoIdNumber
-        const mismaAsignatura =
-          item.asignaturaId === asignaturaIdNumber || item.id_asignatura === asignaturaIdNumber
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
 
-        return !(mismoCurso && mismaAsignatura)
-      })
+      this.cargando = true
+      this.error = null
 
-      this.persistirRelaciones()
+      try {
+        await api.delete(
+          `/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/asignaturas/${asignaturaIdNumber}`,
+        )
+
+        return this.sincronizarAsignaturasCurso(cursoIdNumber)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
     },
 
     cambiarDocenteAsignatura(cursoId, asignaturaId, docenteId) {
       const cursoIdNumber = Number(cursoId)
       const asignaturaIdNumber = Number(asignaturaId)
+      const items = this.asignaturasPorCurso[cursoIdNumber] || []
+      const relacion = items.find(
+        (item) =>
+          item.asignaturaId === asignaturaIdNumber || item.id_asignatura === asignaturaIdNumber,
+      )
 
-      const relacion = this.docenteAsignaturaCurso.find((item) => {
-        const mismoCurso = item.cursoId === cursoIdNumber || item.id_curso === cursoIdNumber
-        const mismaAsignatura =
-          item.asignaturaId === asignaturaIdNumber || item.id_asignatura === asignaturaIdNumber
+      if (!relacion || !docenteId) return
 
-        return mismoCurso && mismaAsignatura
+      return this.agregarAsignaturaACurso(cursoIdNumber, asignaturaIdNumber, docenteId, {
+        horas_semanales: relacion.horas_semanales ?? relacion.horasSemanales ?? 4,
       })
-
-      if (!relacion) return
-
-      relacion.docenteId = docenteId ? Number(docenteId) : null
-      relacion.id_docente = docenteId ? Number(docenteId) : null
-
-      this.persistirRelaciones()
     },
 
     actualizarHorasAsignaturaCurso(cursoId, asignaturaId, horasSemanales) {
       const cursoIdNumber = Number(cursoId)
       const asignaturaIdNumber = Number(asignaturaId)
+      const items = this.asignaturasPorCurso[cursoIdNumber] || []
+      const relacion = items.find(
+        (item) =>
+          item.asignaturaId === asignaturaIdNumber || item.id_asignatura === asignaturaIdNumber,
+      )
 
-      const relacion = this.docenteAsignaturaCurso.find((item) => {
-        const mismoCurso = item.cursoId === cursoIdNumber || item.id_curso === cursoIdNumber
-        const mismaAsignatura =
-          item.asignaturaId === asignaturaIdNumber || item.id_asignatura === asignaturaIdNumber
+      if (!relacion?.docenteId && !relacion?.id_docente) return
 
-        return mismoCurso && mismaAsignatura
-      })
-
-      if (!relacion) return
-
-      relacion.horas_semanales = horasSemanales ? Number(horasSemanales) : null
-
-      this.persistirRelaciones()
+      return this.agregarAsignaturaACurso(
+        cursoIdNumber,
+        asignaturaIdNumber,
+        relacion.docenteId ?? relacion.id_docente,
+        { horas_semanales: horasSemanales },
+      )
     },
 
     resetData() {
       this.asignaturas = []
       this.tiposCalificacion = []
-      this.docenteAsignaturaCurso = [...docenteAsignaturaCursoMock]
-      this.persistirRelaciones()
+      this.asignaturasPorCurso = {}
+      this.docenteAsignaturaCurso = []
     },
   },
 })

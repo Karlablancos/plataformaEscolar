@@ -1,9 +1,13 @@
 package com.colegio.establecimiento.controller;
 
 import com.colegio.establecimiento.dto.AsignaturaDTO;
+import com.colegio.establecimiento.dto.CursoAsignaturaDTO;
+import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
+import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
+import com.colegio.establecimiento.dto.ProfesorJefeRequestDTO;
 import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.service.EstablecimientoService;
 import lombok.RequiredArgsConstructor;
@@ -125,5 +129,75 @@ public class EstablecimientoController {
     @GetMapping("/{id}/estudiantes")
     public ResponseEntity<List<EstudianteDTO>> listarEstudiantes(@PathVariable Integer id) {
         return ResponseEntity.ok(establecimientoService.listarEstudiantes(id));
+    }
+
+    @GetMapping("/{id}/cursos/{idCurso}/estudiantes")
+    public ResponseEntity<List<EstudianteDTO>> listarEstudiantesPorCurso(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso) {
+        return ResponseEntity.ok(establecimientoService.listarEstudiantesPorCurso(id, idCurso));
+    }
+
+    @PostMapping("/{id}/cursos/{idCurso}/estudiantes/{idEstudiante}")
+    public ResponseEntity<EstudianteDTO> matricularEstudiante(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso,
+            @PathVariable Integer idEstudiante) {
+        return ResponseEntity.ok(
+                establecimientoService.matricularEstudiante(id, idCurso, idEstudiante));
+    }
+
+    @DeleteMapping("/{id}/cursos/{idCurso}/estudiantes/{idEstudiante}")
+    public ResponseEntity<Void> desmatricularEstudiante(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso,
+            @PathVariable Integer idEstudiante) {
+        if (!establecimientoService.desmatricularEstudiante(id, idCurso, idEstudiante)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/docentes")
+    public ResponseEntity<List<DocenteDTO>> listarDocentes(@PathVariable Integer id) {
+        return ResponseEntity.ok(establecimientoService.listarDocentes(id));
+    }
+
+    @PutMapping("/{id}/cursos/{idCurso}/profesor-jefe")
+    public ResponseEntity<CursoDTO> asignarProfesorJefe(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso,
+            @RequestBody ProfesorJefeRequestDTO request) {
+        return establecimientoService.asignarProfesorJefe(
+                        id, idCurso, request != null ? request.getIdDocente() : null)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/cursos/{idCurso}/asignaturas")
+    public ResponseEntity<List<CursoAsignaturaDTO>> listarAsignaturasCurso(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso) {
+        return ResponseEntity.ok(establecimientoService.listarAsignaturasCurso(id, idCurso));
+    }
+
+    @PostMapping("/{id}/cursos/{idCurso}/asignaturas")
+    public ResponseEntity<CursoAsignaturaDTO> asignarAsignaturaCurso(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso,
+            @RequestBody CursoAsignaturaRequestDTO request) {
+        return ResponseEntity.ok(
+                establecimientoService.asignarAsignaturaCurso(id, idCurso, request));
+    }
+
+    @DeleteMapping("/{id}/cursos/{idCurso}/asignaturas/{idAsignatura}")
+    public ResponseEntity<Void> quitarAsignaturaCurso(
+            @PathVariable Integer id,
+            @PathVariable Integer idCurso,
+            @PathVariable Integer idAsignatura) {
+        if (!establecimientoService.quitarAsignaturaCurso(id, idCurso, idAsignatura)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
     }
 }

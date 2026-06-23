@@ -1,26 +1,38 @@
 package com.colegio.establecimiento.service;
 
 import com.colegio.establecimiento.dto.AsignaturaDTO;
+import com.colegio.establecimiento.dto.CursoAsignaturaDTO;
+import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
+import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.model.Asignatura;
 import com.colegio.establecimiento.model.Curso;
+import com.colegio.establecimiento.model.CursoAsignatura;
+import com.colegio.establecimiento.model.Docente;
 import com.colegio.establecimiento.model.Establecimiento;
 import com.colegio.establecimiento.model.Estudiante;
+import com.colegio.establecimiento.model.EstudianteCurso;
 import com.colegio.establecimiento.model.TipoCalificacion;
 import com.colegio.establecimiento.repository.AsignaturaRepository;
+import com.colegio.establecimiento.repository.CursoAsignaturaRepository;
 import com.colegio.establecimiento.repository.CursoRepository;
+import com.colegio.establecimiento.repository.DocenteRepository;
 import com.colegio.establecimiento.repository.EstablecimientoRepository;
+import com.colegio.establecimiento.repository.EstudianteCursoRepository;
 import com.colegio.establecimiento.repository.EstudianteRepository;
 import com.colegio.establecimiento.repository.TipoCalificacionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +42,9 @@ public class EstablecimientoService {
     private final CursoRepository cursoRepository;
     private final AsignaturaRepository asignaturaRepository;
     private final EstudianteRepository estudianteRepository;
+    private final EstudianteCursoRepository estudianteCursoRepository;
+    private final DocenteRepository docenteRepository;
+    private final CursoAsignaturaRepository cursoAsignaturaRepository;
     private final TipoCalificacionRepository tipoCalificacionRepository;
 
     public List<EstablecimientoDTO> listarTodos(Integer idEstablecimiento) {
@@ -259,40 +274,241 @@ public class EstablecimientoService {
     }
 
     public List<EstudianteDTO> listarEstudiantes(Integer idEstablecimiento) {
-        return estudianteRepository.findByIdEstablecimiento(idEstablecimiento)
-                .stream()
-                .map(this::toEstudianteDTO)
+        validarEstablecimiento(idEstablecimiento);
+
+        List<Estudiante> estudiantes = estudianteRepository.findByIdEstablecimiento(idEstablecimiento);
+        Map<Integer, Integer> cursoPorEstudiante = mapCursoActivoPorEstudiante(estudiantes);
+
+        return estudiantes.stream()
+                .map(estudiante -> toEstudianteDTO(
+                        estudiante,
+                        cursoPorEstudiante.get(estudiante.getIdEstudiante())))
                 .toList();
     }
 
-    private CursoDTO toCursoDTO(Curso c) {
-        CursoDTO dto = new CursoDTO();
-        dto.setIdCurso(c.getIdCurso());
-        dto.setIdEstablecimiento(c.getIdEstablecimiento());
-        dto.setNumero(c.getNumero());
-        dto.setLetra(c.getLetra());
-        dto.setTipoEnsenanza(c.getTipoEnsenanza());
-        dto.setModalidad(c.getModalidad());
-        dto.setAnioAcademico(c.getAnioAcademico());
-        dto.setEsNivelSimce(c.getEsNivelSimce());
-        dto.setEstado(c.getEstado());
-        // nombre calculado: "1° Básica A"
-        dto.setNombre(c.getNumero() + "° " + c.getTipoEnsenanza() + " " + c.getLetra().trim());
+    public List<EstudianteDTO> listarEstudiantesPorCurso(
+            Integer idEstablecimiento, Integer idCurso) {
+        validarCurso(idEstablecimiento, idCurso);
+
+        return estudianteCursoRepository.findByIdCursoAndEstado(idCurso, "ACTIVO")
+                .stream()
+                .map(matricula -> estudianteRepository.findById(matricula.getIdEstudiante()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(estudiante -> estudiante.getIdEstablecimiento().equals(idEstablecimiento))
+                .map(estudiante -> toEstudianteDTO(estudiante, idCurso))
+                .toList();
+    }
+
+    public EstudianteDTO matricularEstudiante(
+            Integer idEstablecimiento, Integer idCurso, Integer idEstudiante) {
+        validarCurso(idEstablecimiento, idCurso);
+
+        Estudiante estudiante = estudianteRepository.findById(idEstudiante)
+                .filter(item -> item.getIdEstablecimiento().equals(idEstablecimiento))
+                .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado."));
+
+        estudianteCursoRepository.findByIdEstudianteAndEstado(idEstudiante, "ACTIVO")
+                .ifPresent(matriculaActiva -> {
+                    if (!matriculaActiva.getIdCurso().equals(idCurso)) {
+                        matriculaActiva.setEstado("INACTIVO");
+                        estudianteCursoRepository.save(matriculaActiva);
+                    }
+                });
+
+        EstudianteCurso matricula = estudianteCursoRepository
+                .findByIdEstudianteAndIdCurso(idEstudiante, idCurso)
+                .orElseGet(() -> {
+                    EstudianteCurso nueva = new EstudianteCurso();
+                    nueva.setIdEstudiante(idEstudiante);
+                    nueva.setIdCurso(idCurso);
+                    return nueva;
+                });
+
+        matricula.setFechaMatricula(LocalDate.now());
+        matricula.setEstado("ACTIVO");
+        estudianteCursoRepository.save(matricula);
+
+        return toEstudianteDTO(estudiante, idCurso);
+    }
+
+    public boolean desmatricularEstudiante(
+            Integer idEstablecimiento, Integer idCurso, Integer idEstudiante) {
+        if (cursoRepository.findByIdCursoAndIdEstablecimiento(idCurso, idEstablecimiento).isEmpty()) {
+            return false;
+        }
+
+        Optional<EstudianteCurso> matricula = estudianteCursoRepository
+                .findByIdEstudianteAndIdCurso(idEstudiante, idCurso);
+
+        if (matricula.isEmpty() || !"ACTIVO".equals(matricula.get().getEstado())) {
+            return false;
+        }
+
+        EstudianteCurso registro = matricula.get();
+        registro.setEstado("INACTIVO");
+        estudianteCursoRepository.save(registro);
+        return true;
+    }
+
+    public List<DocenteDTO> listarDocentes(Integer idEstablecimiento) {
+        validarEstablecimiento(idEstablecimiento);
+
+        return docenteRepository.findByIdEstablecimiento(idEstablecimiento)
+                .stream()
+                .map(this::toDocenteDTO)
+                .toList();
+    }
+
+    public Optional<CursoDTO> asignarProfesorJefe(
+            Integer idEstablecimiento, Integer idCurso, Integer idDocente) {
+        return cursoRepository.findByIdCursoAndIdEstablecimiento(idCurso, idEstablecimiento)
+                .map(curso -> {
+                    if (idDocente != null) {
+                        validarDocente(idEstablecimiento, idDocente);
+                    }
+                    curso.setIdDocenteJefe(idDocente);
+                    return toCursoDTO(cursoRepository.save(curso));
+                });
+    }
+
+    public List<CursoAsignaturaDTO> listarAsignaturasCurso(
+            Integer idEstablecimiento, Integer idCurso) {
+        validarCurso(idEstablecimiento, idCurso);
+
+        return cursoAsignaturaRepository.findByIdCursoAndEstado(idCurso, "ACTIVO")
+                .stream()
+                .map(relacion -> toCursoAsignaturaDTO(relacion, idEstablecimiento))
+                .toList();
+    }
+
+    public CursoAsignaturaDTO asignarAsignaturaCurso(
+            Integer idEstablecimiento,
+            Integer idCurso,
+            CursoAsignaturaRequestDTO request) {
+        validarCurso(idEstablecimiento, idCurso);
+        validarDatosAsignaturaCurso(request);
+
+        Integer idAsignatura = request.getIdAsignatura();
+        Integer idDocente = request.getIdDocente();
+        Integer horasSemanales = request.getHorasSemanales() != null ? request.getHorasSemanales() : 4;
+
+        validarAsignatura(idEstablecimiento, idAsignatura);
+        validarDocente(idEstablecimiento, idDocente);
+
+        Optional<CursoAsignatura> existente = cursoAsignaturaRepository
+                .findByIdCursoAndIdAsignatura(idCurso, idAsignatura);
+
+        if (existente.isPresent() && "ACTIVO".equals(existente.get().getEstado())) {
+            throw new IllegalArgumentException("La asignatura ya está asignada al curso.");
+        }
+
+        CursoAsignatura relacion = existente.orElseGet(() -> {
+            CursoAsignatura nueva = new CursoAsignatura();
+            nueva.setIdCurso(idCurso);
+            nueva.setIdAsignatura(idAsignatura);
+            return nueva;
+        });
+
+        relacion.setIdDocente(idDocente);
+        relacion.setHorasSemanales(horasSemanales);
+        relacion.setEstado("ACTIVO");
+
+        return toCursoAsignaturaDTO(cursoAsignaturaRepository.save(relacion), idEstablecimiento);
+    }
+
+    public boolean quitarAsignaturaCurso(
+            Integer idEstablecimiento, Integer idCurso, Integer idAsignatura) {
+        if (cursoRepository.findByIdCursoAndIdEstablecimiento(idCurso, idEstablecimiento).isEmpty()) {
+            return false;
+        }
+
+        Optional<CursoAsignatura> relacion = cursoAsignaturaRepository
+                .findByIdCursoAndIdAsignatura(idCurso, idAsignatura);
+
+        if (relacion.isEmpty() || !"ACTIVO".equals(relacion.get().getEstado())) {
+            return false;
+        }
+
+        CursoAsignatura registro = relacion.get();
+        registro.setEstado("INACTIVO");
+        cursoAsignaturaRepository.save(registro);
+        return true;
+    }
+
+    private void validarAsignatura(Integer idEstablecimiento, Integer idAsignatura) {
+        if (asignaturaRepository.findByIdAsignaturaAndIdEstablecimiento(idAsignatura, idEstablecimiento).isEmpty()) {
+            throw new IllegalArgumentException("Asignatura no encontrada.");
+        }
+    }
+
+    private void validarDatosAsignaturaCurso(CursoAsignaturaRequestDTO request) {
+        if (request == null || request.getIdAsignatura() == null) {
+            throw new IllegalArgumentException("La asignatura es obligatoria.");
+        }
+        if (request.getIdDocente() == null) {
+            throw new IllegalArgumentException("El docente responsable es obligatorio.");
+        }
+        if (request.getHorasSemanales() != null && request.getHorasSemanales() < 1) {
+            throw new IllegalArgumentException("Las horas semanales deben ser mayores a cero.");
+        }
+    }
+
+    private CursoAsignaturaDTO toCursoAsignaturaDTO(CursoAsignatura relacion, Integer idEstablecimiento) {
+        CursoAsignaturaDTO dto = new CursoAsignaturaDTO();
+        dto.setIdCursoAsignatura(relacion.getIdCursoAsignatura());
+        dto.setIdCurso(relacion.getIdCurso());
+        dto.setIdAsignatura(relacion.getIdAsignatura());
+        dto.setIdDocente(relacion.getIdDocente());
+        dto.setHorasSemanales(relacion.getHorasSemanales());
+        dto.setEstado(relacion.getEstado());
+
+        asignaturaRepository.findByIdAsignaturaAndIdEstablecimiento(
+                        relacion.getIdAsignatura(), idEstablecimiento)
+                .ifPresent(asignatura -> dto.setAsignaturaNombre(asignatura.getNombre()));
+
+        docenteRepository.findByIdDocenteAndIdEstablecimiento(
+                        relacion.getIdDocente(), idEstablecimiento)
+                .ifPresent(docente -> dto.setDocenteNombre(
+                        docente.getNombres() + " " + docente.getApellidoPaterno()));
+
         return dto;
     }
 
-    private AsignaturaDTO toAsignaturaDTO(Asignatura a) {
-        AsignaturaDTO dto = new AsignaturaDTO();
-        dto.setIdAsignatura(a.getIdAsignatura());
-        dto.setIdEstablecimiento(a.getIdEstablecimiento());
-        dto.setNombre(a.getNombre());
-        dto.setCodigo(a.getCodigo());
-        dto.setIdTipoCalificacion(a.getIdTipoCalificacion());
-        dto.setEstado(a.getEstado());
-        return dto;
+    private void validarDocente(Integer idEstablecimiento, Integer idDocente) {
+        if (docenteRepository.findByIdDocenteAndIdEstablecimiento(idDocente, idEstablecimiento).isEmpty()) {
+            throw new IllegalArgumentException("Docente no encontrado.");
+        }
+    }
+
+    private void validarCurso(Integer idEstablecimiento, Integer idCurso) {
+        if (cursoRepository.findByIdCursoAndIdEstablecimiento(idCurso, idEstablecimiento).isEmpty()) {
+            throw new IllegalArgumentException("Curso no encontrado.");
+        }
+    }
+
+    private Map<Integer, Integer> mapCursoActivoPorEstudiante(List<Estudiante> estudiantes) {
+        if (estudiantes.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Integer> ids = estudiantes.stream()
+                .map(Estudiante::getIdEstudiante)
+                .toList();
+
+        return estudianteCursoRepository.findByIdEstudianteInAndEstado(ids, "ACTIVO")
+                .stream()
+                .collect(Collectors.toMap(
+                        EstudianteCurso::getIdEstudiante,
+                        EstudianteCurso::getIdCurso,
+                        (actual, duplicado) -> actual));
     }
 
     private EstudianteDTO toEstudianteDTO(Estudiante e) {
+        return toEstudianteDTO(e, null);
+    }
+
+    private EstudianteDTO toEstudianteDTO(Estudiante e, Integer idCurso) {
         EstudianteDTO dto = new EstudianteDTO();
         dto.setIdEstudiante(e.getIdEstudiante());
         dto.setIdEstablecimiento(e.getIdEstablecimiento());
@@ -311,6 +527,50 @@ public class EstablecimientoService {
         dto.setTieneNee(e.getTieneNee());
         dto.setEnPie(e.getEnPie());
         dto.setEstado(e.getEstado());
+        dto.setIdCurso(idCurso);
+        return dto;
+    }
+
+    private CursoDTO toCursoDTO(Curso c) {
+        CursoDTO dto = new CursoDTO();
+        dto.setIdCurso(c.getIdCurso());
+        dto.setIdEstablecimiento(c.getIdEstablecimiento());
+        dto.setNumero(c.getNumero());
+        dto.setLetra(c.getLetra());
+        dto.setTipoEnsenanza(c.getTipoEnsenanza());
+        dto.setModalidad(c.getModalidad());
+        dto.setAnioAcademico(c.getAnioAcademico());
+        dto.setEsNivelSimce(c.getEsNivelSimce());
+        dto.setEstado(c.getEstado());
+        dto.setIdDocenteJefe(c.getIdDocenteJefe());
+        dto.setNombre(c.getNumero() + "° " + c.getTipoEnsenanza() + " " + c.getLetra().trim());
+        return dto;
+    }
+
+    private DocenteDTO toDocenteDTO(Docente d) {
+        DocenteDTO dto = new DocenteDTO();
+        dto.setIdDocente(d.getIdDocente());
+        dto.setIdEstablecimiento(d.getIdEstablecimiento());
+        dto.setRut(d.getRut());
+        dto.setDv(d.getDv());
+        dto.setNombres(d.getNombres());
+        dto.setApellidoPaterno(d.getApellidoPaterno());
+        dto.setApellidoMaterno(d.getApellidoMaterno());
+        dto.setNombreCompleto(d.getNombres() + " " + d.getApellidoPaterno() + " " + d.getApellidoMaterno());
+        dto.setCorreoElectronico(d.getCorreoElectronico());
+        dto.setTelefono(d.getTelefono());
+        dto.setEstado(d.getEstado());
+        return dto;
+    }
+
+    private AsignaturaDTO toAsignaturaDTO(Asignatura a) {
+        AsignaturaDTO dto = new AsignaturaDTO();
+        dto.setIdAsignatura(a.getIdAsignatura());
+        dto.setIdEstablecimiento(a.getIdEstablecimiento());
+        dto.setNombre(a.getNombre());
+        dto.setCodigo(a.getCodigo());
+        dto.setIdTipoCalificacion(a.getIdTipoCalificacion());
+        dto.setEstado(a.getEstado());
         return dto;
     }
 }

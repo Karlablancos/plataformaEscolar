@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAcademicStore } from '@/stores/academicStore'
 import { useCursosStore } from '@/stores/cursosStore'
@@ -8,8 +8,32 @@ const route = useRoute()
 const academic = useAcademicStore()
 const cursosStore = useCursosStore()
 
-onMounted(() => {
-  cursosStore.cargarCursos().catch(() => {})
+const cargando = ref(false)
+const errorOperacion = ref('')
+const errorProfesor = ref('')
+const guardandoProfesor = ref(false)
+const errorAsignaturas = ref('')
+const guardandoAsignatura = ref(false)
+
+onMounted(async () => {
+  cargando.value = true
+  errorOperacion.value = ''
+
+  try {
+    await Promise.all([
+      cursosStore.cargarCursos(),
+      academic.cargarAlumnos(),
+      academic.cargarAsignaturas(),
+      academic.cargarDocentes(),
+    ])
+    await academic.sincronizarAlumnosCurso(cursoId.value)
+    await academic.sincronizarAsignaturasCurso(cursoId.value)
+  } catch (error) {
+    errorOperacion.value =
+      error?.response?.data?.mensaje || error?.message || 'No se pudo cargar la configuración del curso.'
+  } finally {
+    cargando.value = false
+  }
 })
 
 const tabActiva = ref('estudiantes')
@@ -24,6 +48,14 @@ const docenteSeleccionadoId = ref('')
 const cursoId = computed(() => Number(route.params.id))
 const curso = computed(() => academic.getCursoById(cursoId.value))
 
+watch(
+  curso,
+  (value) => {
+    profesorJefeId.value = value?.profesorJefeId ? String(value.profesorJefeId) : ''
+  },
+  { immediate: true },
+)
+
 const nombreCurso = computed(() => {
   if (!curso.value) return ''
   return academic.getCursoNombre(curso.value)
@@ -32,10 +64,18 @@ const nombreCurso = computed(() => {
 const nombreAlumno = (alumno) => {
   return (
     alumno.nombre ||
-    `${alumno.nombres} ${alumno.apellidoPaterno} ${alumno.apellidoMaterno || ''}`
+    alumno.nombreCompleto ||
+    `${alumno.nombres} ${alumno.apellido_paterno || alumno.apellidoPaterno || ''} ${alumno.apellido_materno || alumno.apellidoMaterno || ''}`
       .replace(/\s+/g, ' ')
       .trim()
   )
+}
+
+const formatRut = (alumno) => {
+  if (!alumno?.rut) return 'No registrado'
+  const rut = String(alumno.rut).trim()
+  const dv = alumno.dv ? String(alumno.dv).trim() : ''
+  return dv ? `${rut}-${dv}` : rut
 }
 
 const normalizarTexto = (texto) =>
@@ -45,18 +85,15 @@ const normalizarTexto = (texto) =>
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[.\-\s]/g, '')
 
-const alumnosDelCurso = computed(() => {
-  if (!curso.value) return []
-
-  return academic.alumnos.filter(
-    (alumno) => alumno.cursoId === cursoId.value || (curso.value.alumnos || []).includes(alumno.id),
-  )
-})
+const alumnosDelCurso = computed(() => cursosStore.getEstudiantesCurso(cursoId.value))
 
 const alumnosDisponibles = computed(() => {
-  return academic.alumnosFiltrados.filter(
-    (alumno) => !alumno.cursoId || alumno.cursoId !== cursoId.value,
-  )
+  return academic.alumnosFiltrados.filter((alumno) => {
+    const alumnoId = alumno.id_alumno ?? alumno.id
+    return !alumnosDelCurso.value.some(
+      (enCurso) => (enCurso.id_alumno ?? enCurso.id) === alumnoId,
+    )
+  })
 })
 
 const alumnosDisponiblesFiltrados = computed(() => {
@@ -79,21 +116,16 @@ const profesorJefe = computed(() => {
   return academic.getProfesorById(curso.value.profesorJefeId)
 })
 
-const asignaturasCurso = computed(() => {
-  return academic.docenteAsignaturaCurso
-    .filter((item) => item.cursoId === cursoId.value && item.anioAcademico === academic.anioActivo)
-    .map((item) => {
-      const asignatura = academic.getAsignaturaById(item.asignaturaId)
-      const docente = item.docenteId ? academic.getProfesorById(item.docenteId) : null
+const asignaturasCurso = computed(() => academic.getAsignaturasCurso(cursoId.value))
 
-      return {
-        ...item,
-        asignaturaNombre: asignatura?.nombre || 'Asignatura no encontrada',
-        docenteNombre: docente
-          ? `${docente.nombres} ${docente.apellido_paterno}`.trim()
-          : 'Sin docente',
-      }
-    })
+const asignaturasDisponibles = computed(() => {
+  const idsAsignadas = new Set(
+    asignaturasCurso.value.map((item) => item.asignaturaId ?? item.id_asignatura),
+  )
+
+  return academic.asignaturasFiltradas.filter(
+    (asignatura) => !idsAsignadas.has(asignatura.id ?? asignatura.id_asignatura),
+  )
 })
 
 const abrirBuscadorEstudiante = () => {
@@ -101,35 +133,88 @@ const abrirBuscadorEstudiante = () => {
   busquedaAlumno.value = ''
 }
 
-const agregarAlumnoDirecto = (alumnoId) => {
-  academic.asignarAlumnoACurso(cursoId.value, alumnoId)
-  busquedaAlumno.value = ''
-  mostrarBuscadorEstudiante.value = false
+const agregarAlumnoDirecto = async (alumnoId) => {
+  errorOperacion.value = ''
+
+  try {
+    await academic.asignarAlumnoACurso(cursoId.value, alumnoId)
+    busquedaAlumno.value = ''
+    mostrarBuscadorEstudiante.value = false
+  } catch (error) {
+    errorOperacion.value =
+      error?.response?.data?.mensaje || error?.message || 'No se pudo agregar el estudiante.'
+  }
 }
 
-const quitarAlumno = (alumnoId) => {
-  academic.quitarAlumnoDeCurso(cursoId.value, alumnoId)
+const quitarAlumno = async (alumnoId) => {
+  errorOperacion.value = ''
+
+  try {
+    await academic.quitarAlumnoDeCurso(cursoId.value, alumnoId)
+  } catch (error) {
+    errorOperacion.value =
+      error?.response?.data?.mensaje || error?.message || 'No se pudo quitar el estudiante.'
+  }
 }
 
-const guardarProfesorJefe = () => {
-  academic.asignarProfesorJefe(cursoId.value, profesorJefeId.value || null)
+const guardarProfesorJefe = async () => {
+  errorProfesor.value = ''
+  guardandoProfesor.value = true
+
+  try {
+    await academic.asignarProfesorJefe(cursoId.value, profesorJefeId.value || null)
+  } catch (error) {
+    errorProfesor.value =
+      error?.response?.data?.mensaje ||
+      error?.message ||
+      'No se pudo guardar el profesor jefe.'
+  } finally {
+    guardandoProfesor.value = false
+  }
 }
 
-const agregarAsignatura = () => {
-  if (!asignaturaSeleccionadaId.value) return
+const agregarAsignatura = async () => {
+  if (!asignaturaSeleccionadaId.value || !docenteSeleccionadoId.value) {
+    errorAsignaturas.value = 'Debes seleccionar asignatura y docente responsable.'
+    return
+  }
 
-  academic.agregarAsignaturaACurso(
-    cursoId.value,
-    asignaturaSeleccionadaId.value,
-    docenteSeleccionadoId.value || null,
-  )
+  errorAsignaturas.value = ''
+  guardandoAsignatura.value = true
 
-  asignaturaSeleccionadaId.value = ''
-  docenteSeleccionadoId.value = ''
+  try {
+    await academic.agregarAsignaturaACurso(
+      cursoId.value,
+      asignaturaSeleccionadaId.value,
+      docenteSeleccionadoId.value,
+    )
+
+    asignaturaSeleccionadaId.value = ''
+    docenteSeleccionadoId.value = ''
+  } catch (error) {
+    errorAsignaturas.value =
+      error?.response?.data?.mensaje ||
+      error?.message ||
+      'No se pudo agregar la asignatura al curso.'
+  } finally {
+    guardandoAsignatura.value = false
+  }
 }
 
-const quitarAsignatura = (asignaturaId) => {
-  academic.quitarAsignaturaDeCurso(cursoId.value, asignaturaId)
+const quitarAsignatura = async (asignaturaId) => {
+  errorAsignaturas.value = ''
+  guardandoAsignatura.value = true
+
+  try {
+    await academic.quitarAsignaturaDeCurso(cursoId.value, asignaturaId)
+  } catch (error) {
+    errorAsignaturas.value =
+      error?.response?.data?.mensaje ||
+      error?.message ||
+      'No se pudo quitar la asignatura del curso.'
+  } finally {
+    guardandoAsignatura.value = false
+  }
 }
 </script>
 
@@ -194,8 +279,12 @@ const quitarAsignatura = (asignaturaId) => {
     </ul>
 
     <!-- Estudiantes -->
-    <div v-if="tabActiva === 'estudiantes'" class="card">
+    <div v-if="tabActiva === 'estudiantes'" class="card curso-tab-card">
       <div class="card-body">
+        <div v-if="errorOperacion" class="alert alert-danger">{{ errorOperacion }}</div>
+
+        <div v-if="cargando" class="text-muted mb-3">Cargando estudiantes del curso...</div>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2 class="h5 mb-0">Estudiantes del curso</h2>
 
@@ -272,9 +361,9 @@ const quitarAsignatura = (asignaturaId) => {
             </thead>
 
             <tbody>
-              <tr v-for="alumno in alumnosDelCurso" :key="alumno.id">
+              <tr v-for="alumno in alumnosDelCurso" :key="alumno.id_alumno ?? alumno.id">
                 <td>{{ nombreAlumno(alumno) }}</td>
-                <td>{{ alumno.rut || 'No registrado' }}</td>
+                <td>{{ formatRut(alumno) }}</td>
                 <td>
                   <span class="badge text-bg-success">
                     {{ alumno.estado || 'Activo' }}
@@ -302,8 +391,9 @@ const quitarAsignatura = (asignaturaId) => {
     </div>
 
     <!-- Profesor jefe -->
-    <div v-if="tabActiva === 'profesor'" class="card">
+    <div v-if="tabActiva === 'profesor'" class="card curso-tab-card">
       <div class="card-body">
+        <div v-if="errorProfesor" class="alert alert-danger">{{ errorProfesor }}</div>
         <h2 class="h5 mb-3">Profesor jefe</h2>
 
         <div v-if="profesorJefe" class="alert alert-info">
@@ -327,8 +417,12 @@ const quitarAsignatura = (asignaturaId) => {
           </div>
 
           <div class="col-md-4">
-            <button class="btn btn-success btn-rounded w-100" @click="guardarProfesorJefe">
-              Guardar profesor jefe
+            <button
+              class="btn btn-success btn-rounded w-100"
+              :disabled="guardandoProfesor"
+              @click="guardarProfesorJefe"
+            >
+              {{ guardandoProfesor ? 'Guardando...' : 'Guardar profesor jefe' }}
             </button>
           </div>
         </div>
@@ -336,8 +430,9 @@ const quitarAsignatura = (asignaturaId) => {
     </div>
 
     <!-- Asignaturas -->
-    <div v-if="tabActiva === 'asignaturas'" class="card">
+    <div v-if="tabActiva === 'asignaturas'" class="card curso-tab-card">
       <div class="card-body">
+        <div v-if="errorAsignaturas" class="alert alert-danger">{{ errorAsignaturas }}</div>
         <h2 class="h5 mb-3">Asignaturas del curso</h2>
 
         <div class="row g-3 align-items-end mb-4">
@@ -346,7 +441,7 @@ const quitarAsignatura = (asignaturaId) => {
             <select v-model="asignaturaSeleccionadaId" class="form-select">
               <option value="">Seleccionar asignatura</option>
               <option
-                v-for="asignatura in academic.asignaturasFiltradas"
+                v-for="asignatura in asignaturasDisponibles"
                 :key="asignatura.id"
                 :value="asignatura.id"
               >
@@ -358,7 +453,7 @@ const quitarAsignatura = (asignaturaId) => {
           <div class="col-md-5">
             <label class="form-label">Docente responsable</label>
             <select v-model="docenteSeleccionadoId" class="form-select">
-              <option value="">Sin docente</option>
+              <option value="">Seleccionar docente</option>
               <option
                 v-for="docente in academic.profesoresFiltrados"
                 :key="docente.id_docente"
@@ -370,8 +465,12 @@ const quitarAsignatura = (asignaturaId) => {
           </div>
 
           <div class="col-md-2">
-            <button class="btn btn-success btn-rounded w-100" @click="agregarAsignatura">
-              Agregar
+            <button
+              class="btn btn-success btn-rounded w-100"
+              :disabled="guardandoAsignatura"
+              @click="agregarAsignatura"
+            >
+              {{ guardandoAsignatura ? 'Agregando...' : 'Agregar' }}
             </button>
           </div>
         </div>
@@ -399,7 +498,8 @@ const quitarAsignatura = (asignaturaId) => {
                 <td class="text-end">
                   <button
                     class="btn btn-outline-danger btn-sm btn-rounded"
-                    @click="quitarAsignatura(item.asignaturaId)"
+                    :disabled="guardandoAsignatura"
+                    @click="quitarAsignatura(item.asignaturaId ?? item.id_asignatura)"
                   >
                     Quitar
                   </button>
@@ -419,7 +519,7 @@ const quitarAsignatura = (asignaturaId) => {
 
     <!--- Planificación académica -->
 
-    <div v-if="tabActiva === 'planificacion'" class="card border-0 shadow-sm">
+    <div v-if="tabActiva === 'planificacion'" class="card curso-tab-card border-0 shadow-sm">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-4">
           <div>
@@ -502,3 +602,11 @@ const quitarAsignatura = (asignaturaId) => {
 
   <div v-else class="alert alert-warning">Curso no encontrado.</div>
 </template>
+
+<style scoped>
+.curso-tab-card {
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  margin-top: -24px;
+}
+</style>

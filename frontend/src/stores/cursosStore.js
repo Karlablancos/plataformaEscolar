@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import api from '@/api/axios'
 import { saveToStorage } from './shared/persistence'
+import { useAlumnosStore } from './alumnosStore'
+import { mapEstudianteFromApi } from './shared/estudianteMapper'
 import {
   getEstablecimientoId,
   getCursoId,
@@ -49,10 +51,26 @@ const mapCursoFromApi = (dto) => {
     es_nivel_since: esNivelSimce,
     nombre: dto.nombre?.trim() ?? '',
     estado: mapEstadoFromApi(dto.estado),
-    profesorJefeId: null,
+    profesorJefeId: dto.idDocenteJefe ?? null,
     alumnos: [],
     asignaturas: [],
   }
+}
+
+const aplicarCursoActualizado = (cursos, cursoId, dto) => {
+  const curso = mapCursoFromApi(dto)
+  const index = cursos.findIndex((item) => getCursoId(item) === Number(cursoId))
+
+  if (index === -1) {
+    return [...cursos, curso]
+  }
+
+  const alumnos = cursos[index].alumnos || []
+  const asignaturas = cursos[index].asignaturas || []
+
+  const actualizados = [...cursos]
+  actualizados[index] = { ...curso, alumnos, asignaturas }
+  return actualizados
 }
 
 const toCursoPayload = (data) => ({
@@ -90,6 +108,7 @@ const fetchWithRetry = async (fn, retries = 3, delayMs = 1500) => {
 export const useCursosStore = defineStore('cursos', {
   state: () => ({
     cursos: [],
+    estudiantesPorCurso: {},
     anioActivo: Number(localStorage.getItem('anioActivo')) || new Date().getFullYear(),
     cargando: false,
     error: null,
@@ -142,6 +161,10 @@ export const useCursosStore = defineStore('cursos', {
 
     getCursoNombre: () => {
       return (curso) => getCursoNombre(curso)
+    },
+
+    getEstudiantesCurso: (state) => {
+      return (cursoId) => state.estudiantesPorCurso[Number(cursoId)] || []
     },
   },
 
@@ -229,14 +252,7 @@ export const useCursosStore = defineStore('cursos', {
         )
 
         const curso = mapCursoFromApi(actualizado)
-        const index = this.cursos.findIndex((item) => getCursoId(item) === cursoId)
-
-        if (index !== -1) {
-          const alumnos = this.cursos[index].alumnos || []
-          const asignaturas = this.cursos[index].asignaturas || []
-          const profesorJefeId = this.cursos[index].profesorJefeId ?? null
-          this.cursos[index] = { ...curso, alumnos, asignaturas, profesorJefeId }
-        }
+        this.cursos = aplicarCursoActualizado(this.cursos, cursoId, actualizado)
 
         return curso
       } catch (error) {
@@ -270,12 +286,130 @@ export const useCursosStore = defineStore('cursos', {
       }
     },
 
-    asignarProfesorJefe(cursoId, docenteId) {
-      const curso = this.cursos.find((curso) => getCursoId(curso) === Number(cursoId))
+    async asignarProfesorJefe(cursoId, docenteId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
 
-      if (!curso) return
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
 
-      curso.profesorJefeId = docenteId ? Number(docenteId) : null
+      this.cargando = true
+      this.error = null
+
+      try {
+        const { data } = await api.put(
+          `/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/profesor-jefe`,
+          { idDocente: docenteId ? Number(docenteId) : null },
+        )
+
+        this.cursos = aplicarCursoActualizado(this.cursos, cursoIdNumber, data)
+        return mapCursoFromApi(data)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    sincronizarAlumnosLocal(cursoId, alumnoIds) {
+      const cursoIdNumber = Number(cursoId)
+      const ids = alumnoIds.map((id) => Number(id))
+
+      this.cursos = this.cursos.map((curso) => {
+        if (getCursoId(curso) !== cursoIdNumber) {
+          return {
+            ...curso,
+            alumnos: (curso.alumnos || []).filter((id) => !ids.includes(Number(id))),
+          }
+        }
+
+        return {
+          ...curso,
+          alumnos: ids,
+        }
+      })
+    },
+
+    async sincronizarAlumnosCurso(cursoId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
+
+      if (!idEstablecimiento || !cursoIdNumber) {
+        throw new Error('No se encontró el establecimiento o curso activo.')
+      }
+
+      const { data } = await fetchWithRetry(() =>
+        api.get(`/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/estudiantes`),
+      )
+
+      const estudiantes = data.map((item) => mapEstudianteFromApi({ ...item, idCurso: cursoIdNumber }))
+      const alumnoIds = estudiantes.map((estudiante) => estudiante.id)
+
+      this.estudiantesPorCurso = {
+        ...this.estudiantesPorCurso,
+        [cursoIdNumber]: estudiantes,
+      }
+      this.sincronizarAlumnosLocal(cursoIdNumber, alumnoIds)
+
+      const alumnosStore = useAlumnosStore()
+      alumnosStore.upsertEstudiantesDesdeApi(data)
+
+      return estudiantes
+    },
+
+    async matricularEstudiante(cursoId, alumnoId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
+      const alumnoIdNumber = Number(alumnoId)
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      this.error = null
+
+      try {
+        await api.post(
+          `/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/estudiantes/${alumnoIdNumber}`,
+        )
+
+        return this.sincronizarAlumnosCurso(cursoIdNumber)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    async desmatricularEstudiante(cursoId, alumnoId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
+      const alumnoIdNumber = Number(alumnoId)
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      this.error = null
+
+      try {
+        await api.delete(
+          `/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/estudiantes/${alumnoIdNumber}`,
+        )
+
+        useAlumnosStore().quitarAlumnoDeCurso(alumnoIdNumber, cursoIdNumber)
+        return this.sincronizarAlumnosCurso(cursoIdNumber)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
     },
 
     asignarAlumnoACurso(cursoId, alumnoId) {
@@ -313,6 +447,7 @@ export const useCursosStore = defineStore('cursos', {
 
     resetData() {
       this.cursos = []
+      this.estudiantesPorCurso = {}
       this.anioActivo = new Date().getFullYear()
       this.persistirAnioActivo()
     },

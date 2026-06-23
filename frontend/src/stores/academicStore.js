@@ -48,7 +48,11 @@ export const useAcademicStore = defineStore('academic', {
 
     tiposCalificacion: () => useAsignaturasStore().tiposCalificacion,
     tiposCalificacionActivos: () => useAsignaturasStore().tiposCalificacionActivos,
-    docenteAsignaturaCurso: () => useAsignaturasStore().docenteAsignaturaCurso,
+
+    docenteAsignaturaCurso: () => {
+      const store = useAsignaturasStore()
+      return Object.values(store.asignaturasPorCurso).flat()
+    },
 
     getEstablecimientoById: () => useEstablecimientoStore().getEstablecimientoById,
 
@@ -62,6 +66,7 @@ export const useAcademicStore = defineStore('academic', {
 
     getCursoById: () => useCursosStore().getCursoById,
     getCursoNombre: () => useCursosStore().getCursoNombre,
+    getEstudiantesCurso: () => useCursosStore().getEstudiantesCurso,
 
     getDocenteById: () => useDocentesStore().getDocenteById,
     getProfesorById: () => useDocentesStore().getProfesorById,
@@ -69,7 +74,8 @@ export const useAcademicStore = defineStore('academic', {
 
     getAsignaturaById: () => useAsignaturasStore().getAsignaturaById,
     getTipoCalificacionById: () => useAsignaturasStore().getTipoCalificacionById,
-    getAsignaturasByCursoId: () => useAsignaturasStore().getAsignaturasByCursoId,
+    getAsignaturasByCursoId: () => useAsignaturasStore().getAsignaturasCurso,
+    getAsignaturasCurso: () => useAsignaturasStore().getAsignaturasCurso,
   },
 
   actions: {
@@ -114,14 +120,28 @@ export const useAcademicStore = defineStore('academic', {
       })
     },
 
+    async cargarAlumnos() {
+      return useAlumnosStore().cargarAlumnos()
+    },
+
+    async cargarAsignaturas() {
+      return useAsignaturasStore().cargarAsignaturas()
+    },
+
+    async cargarDocentes() {
+      return useDocentesStore().cargarDocentes()
+    },
+
     asignarAlumnoACurso(cursoId, alumnoId) {
-      useCursosStore().asignarAlumnoACurso(cursoId, alumnoId)
-      useAlumnosStore().asignarAlumnoACurso(alumnoId, cursoId)
+      return useCursosStore().matricularEstudiante(cursoId, alumnoId)
     },
 
     quitarAlumnoDeCurso(cursoId, alumnoId) {
-      useCursosStore().quitarAlumnoDeCurso(cursoId, alumnoId)
-      useAlumnosStore().quitarAlumnoDeCurso(alumnoId, cursoId)
+      return useCursosStore().desmatricularEstudiante(cursoId, alumnoId)
+    },
+
+    async sincronizarAlumnosCurso(cursoId) {
+      return useCursosStore().sincronizarAlumnosCurso(cursoId)
     },
 
     agregarCurso(data) {
@@ -136,14 +156,9 @@ export const useAcademicStore = defineStore('academic', {
       await useCursosStore().eliminarCurso(id)
 
       const asignaturasStore = useAsignaturasStore()
-
-      asignaturasStore.docenteAsignaturaCurso = asignaturasStore.docenteAsignaturaCurso.filter(
-        (item) => {
-          return item.cursoId !== Number(id) && item.id_curso !== Number(id)
-        },
-      )
-
-      asignaturasStore.persistir()
+      const cursoId = Number(id)
+      const { [cursoId]: _, ...resto } = asignaturasStore.asignaturasPorCurso
+      asignaturasStore.asignaturasPorCurso = resto
     },
 
     agregarDocente(data) {
@@ -158,7 +173,6 @@ export const useAcademicStore = defineStore('academic', {
       useDocentesStore().eliminarDocente(id)
 
       const cursosStore = useCursosStore()
-      const asignaturasStore = useAsignaturasStore()
       const docenteId = Number(id)
 
       cursosStore.cursos = cursosStore.cursos.map((curso) => ({
@@ -166,20 +180,7 @@ export const useAcademicStore = defineStore('academic', {
         profesorJefeId: curso.profesorJefeId === docenteId ? null : curso.profesorJefeId,
       }))
 
-      asignaturasStore.docenteAsignaturaCurso = asignaturasStore.docenteAsignaturaCurso.map(
-        (item) => {
-          if (item.docenteId !== docenteId && item.id_docente !== docenteId) return item
-
-          return {
-            ...item,
-            docenteId: null,
-            id_docente: null,
-          }
-        },
-      )
-
       cursosStore.persistir()
-      asignaturasStore.persistir()
     },
 
     agregarProfesor(data) {
@@ -207,31 +208,40 @@ export const useAcademicStore = defineStore('academic', {
     },
 
     asignarProfesorJefe(cursoId, docenteId) {
-      useCursosStore().asignarProfesorJefe(cursoId, docenteId)
+      return useCursosStore().asignarProfesorJefe(cursoId, docenteId)
+    },
+
+    async sincronizarAsignaturasCurso(cursoId) {
+      return useAsignaturasStore().sincronizarAsignaturasCurso(cursoId)
     },
 
     agregarAsignaturaACurso(cursoId, asignaturaId, docenteId, data = {}) {
-      useAsignaturasStore().agregarAsignaturaACurso(cursoId, asignaturaId, docenteId, {
-        anioAcademico: useCursosStore().anioActivo,
-        anio_academico: useCursosStore().anioActivo,
-        ...data,
-      })
+      return useAsignaturasStore().agregarAsignaturaACurso(
+        cursoId,
+        asignaturaId,
+        docenteId,
+        data,
+      )
     },
 
     quitarAsignaturaDeCurso(cursoId, asignaturaId) {
-      useAsignaturasStore().quitarAsignaturaDeCurso(cursoId, asignaturaId)
+      return useAsignaturasStore().quitarAsignaturaDeCurso(cursoId, asignaturaId)
     },
 
     cambiarDocenteAsignatura(cursoId, asignaturaId, docenteId) {
-      useAsignaturasStore().cambiarDocenteAsignatura(cursoId, asignaturaId, docenteId)
+      return useAsignaturasStore().cambiarDocenteAsignatura(cursoId, asignaturaId, docenteId)
     },
 
     cambiarProfesorAsignatura(cursoId, asignaturaId, profesorId) {
-      this.cambiarDocenteAsignatura(cursoId, asignaturaId, profesorId)
+      return this.cambiarDocenteAsignatura(cursoId, asignaturaId, profesorId)
     },
 
     actualizarHorasAsignaturaCurso(cursoId, asignaturaId, horasSemanales) {
-      useAsignaturasStore().actualizarHorasAsignaturaCurso(cursoId, asignaturaId, horasSemanales)
+      return useAsignaturasStore().actualizarHorasAsignaturaCurso(
+        cursoId,
+        asignaturaId,
+        horasSemanales,
+      )
     },
 
     agregarApoderadoAEstudiante(estudianteId, apoderadoData, relacionData) {

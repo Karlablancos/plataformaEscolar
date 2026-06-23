@@ -15,4 +15,5 @@ public class CursoDTO {
     private Boolean esNivelSimce;
     private String estado;
     private String nombre; // calculado: "1° Básica A"
+    private Integer idDocenteJefe;
 }

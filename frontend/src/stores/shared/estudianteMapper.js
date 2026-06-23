@@ -1,0 +1,28 @@
+export const mapEstudianteFromApi = (e) => ({
+  id: e.idEstudiante,
+  id_alumno: e.idEstudiante,
+  id_establecimiento: Number(e.idEstablecimiento),
+  establecimientoId: Number(e.idEstablecimiento),
+  nombres: e.nombres?.trim() ?? '',
+  apellido_paterno: e.apellidoPaterno?.trim() ?? '',
+  apellido_materno: e.apellidoMaterno?.trim() ?? '',
+  nombreCompleto: e.nombreCompleto?.trim() ?? '',
+  rut: e.rut?.trim() ?? '',
+  dv: e.dv?.trim() ?? '',
+  correo_electronico: e.correoElectronico ?? '',
+  correoElectronico: e.correoElectronico ?? '',
+  telefono: e.telefono ?? '',
+  fecha_nacimiento: e.fechaNacimiento ?? null,
+  fecha_matricula: e.fechaMatricula ?? null,
+  estado: e.estado
+    ? e.estado.charAt(0).toUpperCase() + e.estado.slice(1).toLowerCase()
+    : 'Activo',
+  prioritario: e.prioritario ?? false,
+  preferente: e.preferente ?? false,
+  tieneNee: e.tieneNee ?? false,
+  enPie: e.enPie ?? false,
+  cursoId: e.idCurso ?? null,
+  id_curso: e.idCurso ?? null,
+  asistencia: 0,
+  promedio: 0,
+})
