@@ -6,7 +6,6 @@ import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.service.EstablecimientoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,32 +55,6 @@ public class EstablecimientoController {
     @GetMapping("/{id}/cursos")
     public ResponseEntity<List<CursoDTO>> listarCursos(@PathVariable Integer id) {
         return ResponseEntity.ok(establecimientoService.listarCursos(id));
-    }
-
-    @PostMapping("/{id}/cursos")
-    public ResponseEntity<CursoDTO> crearCurso(
-            @PathVariable Integer id,
-            @RequestBody CursoDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(establecimientoService.crearCurso(id, request));
-    }
-
-    @PutMapping("/{id}/cursos/{idCurso}")
-    public ResponseEntity<CursoDTO> actualizarCurso(
-            @PathVariable Integer id,
-            @PathVariable Integer idCurso,
-            @RequestBody CursoDTO request) {
-        return establecimientoService.actualizarCurso(id, idCurso, request)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}/cursos/{idCurso}")
-    public ResponseEntity<Void> eliminarCurso(
-            @PathVariable Integer id,
-            @PathVariable Integer idCurso) {
-        establecimientoService.eliminarCurso(id, idCurso);
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/asignaturas")
