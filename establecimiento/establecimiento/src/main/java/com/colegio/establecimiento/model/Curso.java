@@ -36,4 +36,7 @@ public class Curso {
 
     @Column(name = "estado", nullable = false)
     private String estado;
+
+    @Column(name = "id_docente_jefe")
+    private Integer idDocenteJefe;
 }

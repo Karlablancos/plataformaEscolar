@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
-import { cursosMock } from '../data'
-import { loadFromStorage, saveToStorage } from './shared/persistence'
+import api from '@/api/axios'
+import { saveToStorage } from './shared/persistence'
+import { useAlumnosStore } from './alumnosStore'
+import { mapEstudianteFromApi } from './shared/estudianteMapper'
 import {
   getEstablecimientoId,
   getCursoId,
@@ -9,19 +11,116 @@ import {
   getCursoNombre,
 } from './shared/helpers'
 
+const resolveEstablecimientoId = () => {
+  return (
+    getEstablecimientoId() ??
+    JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
+  )
+}
+
+const mapEstadoFromApi = (estado) => {
+  if (!estado) return 'Activo'
+  const normalizado = String(estado).trim().toUpperCase()
+  if (normalizado.startsWith('INACTIV')) return 'Inactivo'
+  if (normalizado.startsWith('CERRAD')) return 'Cerrado'
+  return 'Activo'
+}
+
+const mapEstadoToApi = (estado) => {
+  const normalizado = String(estado || '').trim().toLowerCase()
+  if (normalizado.startsWith('inactiv')) return 'INACTIVO'
+  if (normalizado.startsWith('cerrad')) return 'CERRADO'
+  return 'ACTIVO'
+}
+
+const mapCursoFromApi = (dto) => {
+  const esNivelSimce = dto.esNivelSimce ?? false
+
+  return {
+    id: dto.idCurso,
+    id_curso: dto.idCurso,
+    id_establecimiento: Number(dto.idEstablecimiento),
+    establecimientoId: Number(dto.idEstablecimiento),
+    numero: dto.numero,
+    letra: dto.letra?.trim() ?? '',
+    tipo_ensenanza: dto.tipoEnsenanza?.trim() ?? '',
+    modalidad: dto.modalidad?.trim() ?? '',
+    anio: dto.anioAcademico,
+    anio_academico: dto.anioAcademico,
+    es_nivel_simce: esNivelSimce,
+    es_nivel_since: esNivelSimce,
+    nombre: dto.nombre?.trim() ?? '',
+    estado: mapEstadoFromApi(dto.estado),
+    profesorJefeId: dto.idDocenteJefe ?? null,
+    alumnos: [],
+    asignaturas: [],
+  }
+}
+
+const aplicarCursoActualizado = (cursos, cursoId, dto) => {
+  const curso = mapCursoFromApi(dto)
+  const index = cursos.findIndex((item) => getCursoId(item) === Number(cursoId))
+
+  if (index === -1) {
+    return [...cursos, curso]
+  }
+
+  const alumnos = cursos[index].alumnos || []
+  const asignaturas = cursos[index].asignaturas || []
+
+  const actualizados = [...cursos]
+  actualizados[index] = { ...curso, alumnos, asignaturas }
+  return actualizados
+}
+
+const toCursoPayload = (data) => ({
+  numero: Number(data.numero),
+  letra: String(data.letra || '').trim().toUpperCase(),
+  tipoEnsenanza: String(data.tipo_ensenanza || '').trim(),
+  modalidad: String(data.modalidad || 'Regular').trim(),
+  anioAcademico: Number(data.anio_academico ?? data.anio),
+  esNivelSimce: Boolean(data.es_nivel_simce ?? data.es_nivel_since),
+  estado: mapEstadoToApi(data.estado),
+})
+
+const fetchWithRetry = async (fn, retries = 3, delayMs = 1500) => {
+  let lastError
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error
+      const status = error?.response?.status
+      const esReintentable = !status || status >= 500
+
+      if (!esReintentable || attempt === retries - 1) {
+        throw error
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+    }
+  }
+
+  throw lastError
+}
+
 export const useCursosStore = defineStore('cursos', {
   state: () => ({
-    cursos: loadFromStorage('cursos', cursosMock),
+    cursos: [],
+    estudiantesPorCurso: {},
     anioActivo: Number(localStorage.getItem('anioActivo')) || new Date().getFullYear(),
+    cargando: false,
+    error: null,
   }),
 
   getters: {
     cursosFiltrados: (state) => {
-      const establecimientoId = getEstablecimientoId()
+      const establecimientoId = resolveEstablecimientoId()
 
       return state.cursos.filter(
         (curso) =>
-          getCursoEstablecimientoId(curso) === establecimientoId &&
+          getCursoEstablecimientoId(curso) === Number(establecimientoId) &&
           getCursoAnio(curso) === state.anioActivo,
       )
     },
@@ -43,7 +142,7 @@ export const useCursosStore = defineStore('cursos', {
     },
 
     cursosFiltradosNormalizados() {
-      const establecimientoId = getEstablecimientoId()
+      const establecimientoId = Number(resolveEstablecimientoId())
 
       return this.cursosNormalizados.filter(
         (curso) =>
@@ -63,85 +162,254 @@ export const useCursosStore = defineStore('cursos', {
     getCursoNombre: () => {
       return (curso) => getCursoNombre(curso)
     },
+
+    getEstudiantesCurso: (state) => {
+      return (cursoId) => state.estudiantesPorCurso[Number(cursoId)] || []
+    },
   },
 
   actions: {
+    persistirAnioActivo() {
+      localStorage.setItem('anioActivo', String(this.anioActivo))
+    },
+
     persistir() {
-      saveToStorage('cursos', this.cursos)
-      saveToStorage('anioActivo', this.anioActivo)
+      this.persistirAnioActivo()
     },
 
     cambiarAnioActivo(anio) {
       this.anioActivo = Number(anio)
-      this.persistir()
+      this.persistirAnioActivo()
     },
 
-    agregarCurso(data) {
-      const establecimientoId = getEstablecimientoId()
-      const id = Date.now()
+    async cargarCursos() {
+      const idEstablecimiento = resolveEstablecimientoId()
+      if (!idEstablecimiento) return
 
-      this.cursos.push({
-        id_curso: id,
-        id_establecimiento: establecimientoId,
+      this.cargando = true
+      this.error = null
 
-        // Compatibilidad temporal
-        id,
-        establecimientoId,
-
-        numero: data.numero ? Number(data.numero) : null,
-        letra: data.letra || '',
-        tipo_ensenanza: data.tipo_ensenanza || '',
-        modalidad: data.modalidad || 'Regular',
-        anio_academico: data.anio_academico ? Number(data.anio_academico) : this.anioActivo,
-        es_nivel_since: Boolean(data.es_nivel_since),
-        estado: data.estado || 'Activo',
-
-        profesorJefeId: data.profesorJefeId || null,
-        alumnos: [],
-        asignaturas: [],
-
-        ...data,
-      })
-
-      this.persistir()
+      try {
+        const { data } = await fetchWithRetry(() =>
+          api.get(`/establecimiento/${idEstablecimiento}/cursos`),
+        )
+        this.cursos = data.map(mapCursoFromApi)
+      } catch (error) {
+        this.error = error
+        console.warn('cargarCursos: error al cargar desde API', error?.message)
+        throw error
+      } finally {
+        this.cargando = false
+      }
     },
 
-    actualizarCurso(id, data) {
-      const cursoId = Number(id)
-
-      const index = this.cursos.findIndex((curso) => getCursoId(curso) === cursoId)
-
-      if (index === -1) return
-
-      this.cursos[index] = {
-        ...this.cursos[index],
-        ...data,
-        numero: data.numero !== undefined ? Number(data.numero) : this.cursos[index].numero,
-        anio_academico:
-          data.anio_academico !== undefined
-            ? Number(data.anio_academico)
-            : getCursoAnio(this.cursos[index]),
+    async agregarCurso(data) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
       }
 
-      this.persistir()
+      this.cargando = true
+      this.error = null
+
+      try {
+        const payload = toCursoPayload({
+          ...data,
+          anio_academico: data.anio_academico ?? data.anio ?? this.anioActivo,
+        })
+
+        const { data: creado } = await api.post(
+          `/establecimiento/${idEstablecimiento}/cursos`,
+          payload,
+        )
+
+        const curso = mapCursoFromApi(creado)
+        this.cursos.push(curso)
+        return curso
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
     },
 
-    eliminarCurso(id) {
+    async actualizarCurso(id, data) {
+      const idEstablecimiento = resolveEstablecimientoId()
       const cursoId = Number(id)
 
-      this.cursos = this.cursos.filter((curso) => getCursoId(curso) !== cursoId)
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
 
-      this.persistir()
+      this.cargando = true
+      this.error = null
+
+      try {
+        const { data: actualizado } = await api.put(
+          `/establecimiento/${idEstablecimiento}/cursos/${cursoId}`,
+          toCursoPayload(data),
+        )
+
+        const curso = mapCursoFromApi(actualizado)
+        this.cursos = aplicarCursoActualizado(this.cursos, cursoId, actualizado)
+
+        return curso
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
     },
 
-    asignarProfesorJefe(cursoId, docenteId) {
-      const curso = this.cursos.find((curso) => getCursoId(curso) === Number(cursoId))
+    async eliminarCurso(id) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoId = Number(id)
 
-      if (!curso) return
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
 
-      curso.profesorJefeId = docenteId ? Number(docenteId) : null
+      this.cargando = true
+      this.error = null
 
-      this.persistir()
+      try {
+        await api.delete(`/establecimiento/${idEstablecimiento}/cursos/${cursoId}`)
+
+        this.cursos = this.cursos.filter((curso) => getCursoId(curso) !== cursoId)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    async asignarProfesorJefe(cursoId, docenteId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      this.error = null
+
+      try {
+        const { data } = await api.put(
+          `/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/profesor-jefe`,
+          { idDocente: docenteId ? Number(docenteId) : null },
+        )
+
+        this.cursos = aplicarCursoActualizado(this.cursos, cursoIdNumber, data)
+        return mapCursoFromApi(data)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    sincronizarAlumnosLocal(cursoId, alumnoIds) {
+      const cursoIdNumber = Number(cursoId)
+      const ids = alumnoIds.map((id) => Number(id))
+
+      this.cursos = this.cursos.map((curso) => {
+        if (getCursoId(curso) !== cursoIdNumber) {
+          return {
+            ...curso,
+            alumnos: (curso.alumnos || []).filter((id) => !ids.includes(Number(id))),
+          }
+        }
+
+        return {
+          ...curso,
+          alumnos: ids,
+        }
+      })
+    },
+
+    async sincronizarAlumnosCurso(cursoId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
+
+      if (!idEstablecimiento || !cursoIdNumber) {
+        throw new Error('No se encontró el establecimiento o curso activo.')
+      }
+
+      const { data } = await fetchWithRetry(() =>
+        api.get(`/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/estudiantes`),
+      )
+
+      const estudiantes = data.map((item) => mapEstudianteFromApi({ ...item, idCurso: cursoIdNumber }))
+      const alumnoIds = estudiantes.map((estudiante) => estudiante.id)
+
+      this.estudiantesPorCurso = {
+        ...this.estudiantesPorCurso,
+        [cursoIdNumber]: estudiantes,
+      }
+      this.sincronizarAlumnosLocal(cursoIdNumber, alumnoIds)
+
+      const alumnosStore = useAlumnosStore()
+      alumnosStore.upsertEstudiantesDesdeApi(data)
+
+      return estudiantes
+    },
+
+    async matricularEstudiante(cursoId, alumnoId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
+      const alumnoIdNumber = Number(alumnoId)
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      this.error = null
+
+      try {
+        await api.post(
+          `/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/estudiantes/${alumnoIdNumber}`,
+        )
+
+        return this.sincronizarAlumnosCurso(cursoIdNumber)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    async desmatricularEstudiante(cursoId, alumnoId) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const cursoIdNumber = Number(cursoId)
+      const alumnoIdNumber = Number(alumnoId)
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      this.error = null
+
+      try {
+        await api.delete(
+          `/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/estudiantes/${alumnoIdNumber}`,
+        )
+
+        useAlumnosStore().quitarAlumnoDeCurso(alumnoIdNumber, cursoIdNumber)
+        return this.sincronizarAlumnosCurso(cursoIdNumber)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
     },
 
     asignarAlumnoACurso(cursoId, alumnoId) {
@@ -164,8 +432,6 @@ export const useCursosStore = defineStore('cursos', {
       if (!curso.alumnos.includes(alumnoIdNumber)) {
         curso.alumnos.push(alumnoIdNumber)
       }
-
-      this.persistir()
     },
 
     quitarAlumnoDeCurso(cursoId, alumnoId) {
@@ -177,15 +443,13 @@ export const useCursosStore = defineStore('cursos', {
       if (!curso) return
 
       curso.alumnos = (curso.alumnos || []).filter((id) => id !== alumnoIdNumber)
-
-      this.persistir()
     },
 
     resetData() {
-      this.cursos = [...cursosMock]
+      this.cursos = []
+      this.estudiantesPorCurso = {}
       this.anioActivo = new Date().getFullYear()
-
-      this.persistir()
+      this.persistirAnioActivo()
     },
   },
 })

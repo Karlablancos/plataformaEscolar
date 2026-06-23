@@ -303,7 +303,9 @@ CREATE TABLE curso (
     anio_academico      INT             NOT NULL,
     es_nivel_simce      BOOLEAN         NOT NULL,
     estado              VARCHAR(20)     NOT NULL,
-    CONSTRAINT fk_curso_estab FOREIGN KEY (id_establecimiento) REFERENCES establecimiento(id_establecimiento)
+    id_docente_jefe     INT,
+    CONSTRAINT fk_curso_estab FOREIGN KEY (id_establecimiento) REFERENCES establecimiento(id_establecimiento),
+    CONSTRAINT fk_curso_profesor_jefe FOREIGN KEY (id_docente_jefe) REFERENCES docente(id_docente)
 );
 
 -- ============================================================

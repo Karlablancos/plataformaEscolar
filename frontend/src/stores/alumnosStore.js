@@ -11,6 +11,7 @@ import {
 
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getNombreCompleto } from './shared/helpers'
+import { mapEstudianteFromApi } from './shared/estudianteMapper'
 import api from '@/api/axios'
 
 const getAlumnoId = (alumno) => alumno.id_alumno ?? alumno.id
@@ -21,7 +22,7 @@ const getAlumnoEstablecimientoId = (alumno) => {
 
 export const useAlumnosStore = defineStore('alumnos', {
   state: () => ({
-    alumnos: loadFromStorage('alumnos', alumnosMock),
+    alumnos: [],
     cargando: false,
 
     apoderados: loadFromStorage('apoderados', apoderadosMock),
@@ -38,7 +39,7 @@ export const useAlumnosStore = defineStore('alumnos', {
       const establecimientoId = getEstablecimientoId()
 
       return state.alumnos.filter(
-        (alumno) => getAlumnoEstablecimientoId(alumno) === establecimientoId,
+        (alumno) => Number(getAlumnoEstablecimientoId(alumno)) === Number(establecimientoId),
       )
     },
 
@@ -166,67 +167,40 @@ export const useAlumnosStore = defineStore('alumnos', {
         getEstablecimientoId() ??
         JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
 
-      if (!idEstablecimiento) return
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
 
       this.cargando = true
       try {
         const { data } = await api.get(`/establecimiento/${idEstablecimiento}/estudiantes`)
-        this.alumnos = data.map((e) => ({
-          // IDs en ambas convenciones para compatibilidad con el resto del store
-          id: e.idEstudiante,
-          id_alumno: e.idEstudiante,
-
-          // Establecimiento en ambas convenciones — Number() garantiza que sea número y no string
-          id_establecimiento: Number(e.idEstablecimiento),
-          establecimientoId: Number(e.idEstablecimiento),
-
-          // Nombre — trim() porque la BD guarda char(8)/char(1) con espacios
-          nombres: e.nombres?.trim() ?? '',
-          apellido_paterno: e.apellidoPaterno?.trim() ?? '',
-          apellido_materno: e.apellidoMaterno?.trim() ?? '',
-          nombreCompleto: e.nombreCompleto?.trim() ?? '',
-
-          // RUT — trim() para eliminar espacios del tipo char(8)
-          rut: e.rut?.trim() ?? '',
-          dv: e.dv?.trim() ?? '',
-
-          // Contacto en ambas convenciones
-          correo_electronico: e.correoElectronico ?? '',
-          correoElectronico: e.correoElectronico ?? '',
-          telefono: e.telefono ?? '',
-
-          // Fechas
-          fecha_nacimiento: e.fechaNacimiento ?? null,
-          fecha_matricula: e.fechaMatricula ?? null,
-
-          // Estado: la BD guarda ACTIVO/INACTIVO (mayúsculas), la vista espera Activo/Inactivo
-          estado: e.estado
-            ? e.estado.charAt(0).toUpperCase() + e.estado.slice(1).toLowerCase()
-            : 'Activo',
-
-          // Flags booleanos
-          prioritario: e.prioritario ?? false,
-          preferente: e.preferente ?? false,
-          tieneNee: e.tieneNee ?? false,
-          enPie: e.enPie ?? false,
-
-          // Campos no provistos por la API — se mantienen en null/default
-          cursoId: null,
-          id_curso: null,
-          asistencia: 0,
-          promedio: 0,
-        }))
-
-        this.persistir()
+        this.alumnos = data.map(mapEstudianteFromApi)
+        localStorage.removeItem('alumnos')
       } catch (error) {
-        console.warn('cargarAlumnos: usando localStorage como fallback', error?.message)
+        this.alumnos = []
+        throw error
       } finally {
         this.cargando = false
       }
     },
 
+    upsertEstudiantesDesdeApi(apiList) {
+      if (!Array.isArray(apiList)) return
+
+      apiList.forEach((item) => {
+        const mapped = mapEstudianteFromApi(item)
+        const index = this.alumnos.findIndex((alumno) => getAlumnoId(alumno) === mapped.id)
+
+        if (index === -1) {
+          this.alumnos.push(mapped)
+          return
+        }
+
+        this.alumnos[index] = { ...this.alumnos[index], ...mapped }
+      })
+    },
+
     persistir() {
-      saveToStorage('alumnos', this.alumnos)
       saveToStorage('apoderados', this.apoderados)
       saveToStorage('estudianteApoderado', this.estudianteApoderado)
       saveToStorage('tiposNee', this.tiposNee)
@@ -318,33 +292,42 @@ export const useAlumnosStore = defineStore('alumnos', {
       this.persistir()
     },
 
-    asignarAlumnoACurso(alumnoId, cursoId) {
+    actualizarCursoAlumno(alumnoId, cursoId) {
       const alumnoIdNumber = Number(alumnoId)
-      const cursoIdNumber = Number(cursoId)
+      const cursoIdNumber = cursoId ? Number(cursoId) : null
 
-      const alumno = this.alumnos.find((item) => getAlumnoId(item) === alumnoIdNumber)
+      this.alumnos = this.alumnos.map((alumno) => {
+        if (getAlumnoId(alumno) !== alumnoIdNumber) {
+          return alumno
+        }
 
-      if (!alumno) return
-
-      alumno.cursoId = cursoIdNumber
-      alumno.id_curso = cursoIdNumber
+        return {
+          ...alumno,
+          cursoId: cursoIdNumber,
+          id_curso: cursoIdNumber,
+        }
+      })
 
       this.persistir()
     },
 
+    asignarAlumnoACurso(alumnoId, cursoId) {
+      this.actualizarCursoAlumno(alumnoId, cursoId)
+    },
+
     quitarAlumnoDeCurso(alumnoId, cursoId = null) {
       const alumnoIdNumber = Number(alumnoId)
-
       const alumno = this.alumnos.find((item) => getAlumnoId(item) === alumnoIdNumber)
 
       if (!alumno) return
 
-      if (!cursoId || alumno.cursoId === Number(cursoId) || alumno.id_curso === Number(cursoId)) {
-        alumno.cursoId = null
-        alumno.id_curso = null
+      if (
+        !cursoId ||
+        alumno.cursoId === Number(cursoId) ||
+        alumno.id_curso === Number(cursoId)
+      ) {
+        this.actualizarCursoAlumno(alumnoId, null)
       }
-
-      this.persistir()
     },
 
     agregarApoderadoAEstudiante(estudianteId, apoderadoData, relacionData = {}) {
