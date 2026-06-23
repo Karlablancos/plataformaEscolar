@@ -70,7 +70,7 @@
           <i class="bi bi-clipboard-x fs-2 d-block mb-2"></i>
           No hay evaluaciones para este curso y asignatura.
           <div class="mt-2">
-            <RouterLink to="/academico/evaluaciones" class="btn btn-sm btn-outline-primary rounded-pill">
+            <RouterLink :to="evaluacionesPath" class="btn btn-sm btn-outline-primary rounded-pill">
               <i class="bi bi-plus me-1"></i>Crear evaluación
             </RouterLink>
           </div>
@@ -152,7 +152,7 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCursosStore } from '@/stores/cursosStore'
 import { useAsignaturasStore } from '@/stores/asignaturasStore'
@@ -160,6 +160,7 @@ import { useAlumnosStore } from '@/stores/alumnosStore'
 import api from '@/api/axios'
 
 const authStore = useAuthStore()
+const route = useRoute()
 const cursosStore = useCursosStore()
 const asignaturasStore = useAsignaturasStore()
 const alumnosStore = useAlumnosStore()
@@ -178,6 +179,12 @@ const celdaEnGuardado = reactive({})
 const cursos = computed(() => cursosStore.cursosFiltradosNormalizados)
 const asignaturas = computed(() => asignaturasStore.asignaturasFiltradasNormalizadas)
 const alumnos = computed(() => alumnosStore.alumnosFiltradosNormalizados)
+
+const evaluacionesPath = computed(() =>
+  route.path.startsWith('/profesor')
+    ? '/profesor/academico/evaluaciones'
+    : '/admin/academico/evaluaciones',
+)
 
 const evaluacionesFiltradas = computed(() =>
   evaluaciones.value.filter((ev) => ev.idAsignatura === idAsignatura.value)
@@ -268,7 +275,10 @@ const onAsignaturaChange = () => {
 }
 
 onMounted(async () => {
-  await alumnosStore.cargarAlumnos()
+  await Promise.allSettled([
+    alumnosStore.cargarAlumnos(),
+    asignaturasStore.cargarDatos(),
+  ])
   inicializarGrid()
 })
 </script>

@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
-import { docentesMock, categoriasSnedMock } from '../data'
+import api from '@/api/axios'
+import { categoriasSnedMock } from '../data'
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getDocenteId, getNombreCompleto } from './shared/helpers'
+import { mapDocenteFromApi } from './shared/docenteMapper'
 
 export const useDocentesStore = defineStore('docentes', {
   state: () => ({
-    docentes: loadFromStorage('docentes', docentesMock),
+    docentes: [],
+    cargando: false,
     categoriasSned: loadFromStorage('categoriasSned', categoriasSnedMock),
   }),
 
@@ -15,8 +18,8 @@ export const useDocentesStore = defineStore('docentes', {
 
       return state.docentes.filter(
         (docente) =>
-          docente.id_establecimiento === establecimientoId ||
-          docente.establecimientoId === establecimientoId,
+          Number(docente.id_establecimiento ?? docente.establecimientoId) ===
+          Number(establecimientoId),
       )
     },
 
@@ -40,7 +43,7 @@ export const useDocentesStore = defineStore('docentes', {
       const establecimientoId = getEstablecimientoId()
 
       return this.docentesNormalizados.filter(
-        (docente) => docente.id_establecimiento === establecimientoId,
+        (docente) => Number(docente.id_establecimiento) === Number(establecimientoId),
       )
     },
 
@@ -73,8 +76,29 @@ export const useDocentesStore = defineStore('docentes', {
   },
 
   actions: {
+    async cargarDocentes() {
+      const idEstablecimiento =
+        getEstablecimientoId() ??
+        JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      try {
+        const { data } = await api.get(`/establecimiento/${idEstablecimiento}/docentes`)
+        this.docentes = data.map(mapDocenteFromApi)
+        localStorage.removeItem('docentes')
+      } catch (error) {
+        this.docentes = []
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
     persistir() {
-      saveToStorage('docentes', this.docentes)
       saveToStorage('categoriasSned', this.categoriasSned)
     },
 
@@ -85,16 +109,12 @@ export const useDocentesStore = defineStore('docentes', {
       this.docentes.push({
         id_docente: id,
         id_establecimiento: establecimientoId,
-
-        // Compatibilidad temporal
         id,
         establecimientoId,
-
         id_usuario: data.id_usuario || null,
         id_asignatura: data.id_asignatura || null,
         id_categoria_sned: data.id_categoria_sned || null,
         anio_evaluacion_sned: data.anio_evaluacion_sned || null,
-
         rut: data.rut || '',
         dv: data.dv || '',
         nombres: data.nombres || '',
@@ -108,16 +128,12 @@ export const useDocentesStore = defineStore('docentes', {
         id_comuna: data.id_comuna || null,
         fecha_contratacion: data.fecha_contratacion || '',
         estado: data.estado || 'Activo',
-
         ...data,
       })
-
-      this.persistir()
     },
 
     actualizarDocente(id, data) {
       const docenteId = Number(id)
-
       const index = this.docentes.findIndex((docente) => getDocenteId(docente) === docenteId)
 
       if (index === -1) return
@@ -126,16 +142,11 @@ export const useDocentesStore = defineStore('docentes', {
         ...this.docentes[index],
         ...data,
       }
-
-      this.persistir()
     },
 
     eliminarDocente(id) {
       const docenteId = Number(id)
-
       this.docentes = this.docentes.filter((docente) => getDocenteId(docente) !== docenteId)
-
-      this.persistir()
     },
 
     agregarProfesor(data) {
@@ -151,9 +162,8 @@ export const useDocentesStore = defineStore('docentes', {
     },
 
     resetData() {
-      this.docentes = [...docentesMock]
+      this.docentes = []
       this.categoriasSned = [...categoriasSnedMock]
-
       this.persistir()
     },
   },

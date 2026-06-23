@@ -2,15 +2,15 @@
   <div>
     <nav class="navbar navbar-expand-lg bg-dark navbar-dark navbar-colegio">
       <div class="container">
-        <div class="d-flex align-items-center gap-3">
-          <RouterLink class="navbar-brand fw-bold mb-0" :to="homePath">
+        <div class="d-flex flex-column">
+          <RouterLink class="navbar-brand fw-bold mb-0 p-0" :to="homePath">
             {{ nombreColegio }}
           </RouterLink>
 
-          <small class="d-none d-lg-inline">
+          <small class="d-none d-lg-block">
             <span class="text-secondary">Hola! </span>
             <span class="primary-color-light">
-              {{ auth.user?.nombre }} ({{ auth.user?.rol }})
+              {{ auth.user?.username || auth.user?.nombre }} ({{ auth.user?.rol }})
             </span>
           </small>
         </div>

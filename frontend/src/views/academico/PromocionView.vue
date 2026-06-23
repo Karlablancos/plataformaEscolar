@@ -161,7 +161,7 @@ const calcularPromociones = async () => {
         const { data } = await api.get('/notas/promocion', {
           params: { idEstudiante: res.idAlumno },
         })
-        res.estado = typeof data === 'string' ? data : data.estado || String(data)
+        res.estado = typeof data === 'string' ? data : data.resultado || data.estado || null
       } catch {
         res.estado = null
       } finally {

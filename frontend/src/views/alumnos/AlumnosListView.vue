@@ -11,6 +11,7 @@ const cargando = computed(() => alumnosStore.cargando)
 
 onMounted(() => {
   alumnosStore.cargarAlumnos()
+  cursosStore.cargarCursos().catch(() => {})
 })
 
 const search = ref('')

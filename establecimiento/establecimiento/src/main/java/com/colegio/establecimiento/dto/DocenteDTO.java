@@ -1,12 +1,11 @@
 package com.colegio.establecimiento.dto;
 
 import lombok.Data;
-import java.time.LocalDate;
 
 @Data
-public class EstudianteDTO {
+public class DocenteDTO {
 
-    private Integer idEstudiante;
+    private Integer idDocente;
     private Integer idEstablecimiento;
     private String rut;
     private String dv;
@@ -14,14 +13,7 @@ public class EstudianteDTO {
     private String apellidoPaterno;
     private String apellidoMaterno;
     private String nombreCompleto;
-    private LocalDate fechaNacimiento;
     private String correoElectronico;
     private String telefono;
-    private LocalDate fechaMatricula;
-    private Boolean prioritario;
-    private Boolean preferente;
-    private Boolean tieneNee;
-    private Boolean enPie;
     private String estado;
-    private Integer idCurso;
 }

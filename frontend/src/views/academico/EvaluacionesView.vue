@@ -160,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useCursosStore } from '@/stores/cursosStore'
 import { useAsignaturasStore } from '@/stores/asignaturasStore'
@@ -235,4 +235,8 @@ const badgeTipo = (tipo) => ({
   EXAMEN: 'text-bg-danger',
   TRABAJO: 'text-bg-warning',
 }[tipo] || 'text-bg-secondary')
+
+onMounted(() => {
+  asignaturasStore.cargarDatos().catch(() => {})
+})
 </script>
