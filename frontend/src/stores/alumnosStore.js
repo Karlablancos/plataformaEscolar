@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import {
-  alumnosMock,
   apoderadosMock,
   estudianteApoderadoMock,
   tiposNeeMock,
@@ -436,7 +435,6 @@ export const useAlumnosStore = defineStore('alumnos', {
     },
 
     resetData() {
-      this.alumnos = [...alumnosMock]
       this.apoderados = [...apoderadosMock]
       this.estudianteApoderado = [...estudianteApoderadoMock]
       this.tiposNee = [...tiposNeeMock]

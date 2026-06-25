@@ -3,8 +3,6 @@ import api from '@/api/axios'
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId } from './shared/helpers'
 
-const API_URL = 'http://localhost:8080'
-
 const mapEstablecimiento = (data) => ({
   id_establecimiento: data.idEstablecimiento,
   rbd: data.rbd,
