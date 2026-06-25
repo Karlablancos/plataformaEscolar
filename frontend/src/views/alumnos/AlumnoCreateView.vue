@@ -1,15 +1,20 @@
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAcademicStore } from '../../stores/academicStore'
-import { comunasMock } from '@/data'
+import api from '@/api/axios'
 
 const router = useRouter()
 const academic = useAcademicStore()
 
 const cursos = computed(() => academic.cursosFiltrados)
-const comunas = computed(() => comunasMock)
+const comunas = ref([])
 const tiposNee = computed(() => academic.tiposNee)
+
+onMounted(async () => {
+  const { data } = await api.get('/establecimiento/comunas')
+  comunas.value = data
+})
 
 const form = reactive({
   nombres: '',
@@ -142,8 +147,8 @@ const guardarAlumno = () => {
             <label class="form-label">Comuna</label>
             <select v-model="form.comunaId" class="form-select">
               <option :value="null">Seleccionar comuna</option>
-              <option v-for="comuna in comunas" :key="comuna.id" :value="comuna.id">
-                {{ comuna.nombre }}
+              <option v-for="comuna in comunas" :key="comuna.idComuna" :value="comuna.idComuna">
+                {{ comuna.nombreComuna }}
               </option>
             </select>
           </div>

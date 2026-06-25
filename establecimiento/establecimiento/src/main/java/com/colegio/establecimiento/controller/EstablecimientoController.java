@@ -1,6 +1,7 @@
 package com.colegio.establecimiento.controller;
 
 import com.colegio.establecimiento.dto.AsignaturaDTO;
+import com.colegio.establecimiento.dto.ComunaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
@@ -8,6 +9,7 @@ import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.dto.ProfesorJefeRequestDTO;
+import com.colegio.establecimiento.dto.RegionDTO;
 import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.service.EstablecimientoService;
 import lombok.RequiredArgsConstructor;
@@ -199,5 +201,15 @@ public class EstablecimientoController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/regiones")
+    public ResponseEntity<List<RegionDTO>> listarRegiones() {
+        return ResponseEntity.ok(establecimientoService.listarRegiones());
+    }
+
+    @GetMapping("/comunas")
+    public ResponseEntity<List<ComunaDTO>> listarComunas() {
+        return ResponseEntity.ok(establecimientoService.listarComunas());
     }
 }

@@ -1,28 +1,34 @@
 package com.colegio.establecimiento.service;
 
 import com.colegio.establecimiento.dto.AsignaturaDTO;
+import com.colegio.establecimiento.dto.ComunaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
 import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
+import com.colegio.establecimiento.dto.RegionDTO;
 import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.model.Asignatura;
+import com.colegio.establecimiento.model.Comuna;
 import com.colegio.establecimiento.model.Curso;
 import com.colegio.establecimiento.model.CursoAsignatura;
 import com.colegio.establecimiento.model.Docente;
 import com.colegio.establecimiento.model.Establecimiento;
 import com.colegio.establecimiento.model.Estudiante;
 import com.colegio.establecimiento.model.EstudianteCurso;
+import com.colegio.establecimiento.model.Region;
 import com.colegio.establecimiento.model.TipoCalificacion;
 import com.colegio.establecimiento.repository.AsignaturaRepository;
+import com.colegio.establecimiento.repository.ComunaRepository;
 import com.colegio.establecimiento.repository.CursoAsignaturaRepository;
 import com.colegio.establecimiento.repository.CursoRepository;
 import com.colegio.establecimiento.repository.DocenteRepository;
 import com.colegio.establecimiento.repository.EstablecimientoRepository;
 import com.colegio.establecimiento.repository.EstudianteCursoRepository;
 import com.colegio.establecimiento.repository.EstudianteRepository;
+import com.colegio.establecimiento.repository.RegionRepository;
 import com.colegio.establecimiento.repository.TipoCalificacionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,6 +52,8 @@ public class EstablecimientoService {
     private final DocenteRepository docenteRepository;
     private final CursoAsignaturaRepository cursoAsignaturaRepository;
     private final TipoCalificacionRepository tipoCalificacionRepository;
+    private final RegionRepository regionRepository;
+    private final ComunaRepository comunaRepository;
 
     public List<EstablecimientoDTO> listarTodos(Integer idEstablecimiento) {
         List<Establecimiento> fuente = (idEstablecimiento != null)
@@ -571,6 +579,35 @@ public class EstablecimientoService {
         dto.setCodigo(a.getCodigo());
         dto.setIdTipoCalificacion(a.getIdTipoCalificacion());
         dto.setEstado(a.getEstado());
+        return dto;
+    }
+
+    public List<RegionDTO> listarRegiones() {
+        List<Region> regiones = regionRepository.findAll();
+        List<Comuna> comunas = comunaRepository.findAll();
+        Map<Integer, List<ComunaDTO>> comunasPorRegion = comunas.stream()
+                .collect(Collectors.groupingBy(
+                        Comuna::getIdRegion,
+                        Collectors.mapping(this::toComunaDTO, Collectors.toList())
+                ));
+        return regiones.stream().map(r -> {
+            RegionDTO dto = new RegionDTO();
+            dto.setIdRegion(r.getIdRegion());
+            dto.setNombreRegion(r.getNombreRegion());
+            dto.setComunas(comunasPorRegion.getOrDefault(r.getIdRegion(), List.of()));
+            return dto;
+        }).toList();
+    }
+
+    public List<ComunaDTO> listarComunas() {
+        return comunaRepository.findAll().stream().map(this::toComunaDTO).toList();
+    }
+
+    private ComunaDTO toComunaDTO(Comuna c) {
+        ComunaDTO dto = new ComunaDTO();
+        dto.setIdComuna(c.getIdComuna());
+        dto.setNombreComuna(c.getNombreComuna());
+        dto.setIdRegion(c.getIdRegion());
         return dto;
     }
 }
