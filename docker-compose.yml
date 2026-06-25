@@ -9,10 +9,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - colegio_postgres_data:/var/lib/postgresql/data
-      - ./database/script_colegio.sql:/docker-entrypoint-initdb.d/01-script.sql
-      - ./database/triggers_colegio.sql:/docker-entrypoint-initdb.d/02-triggers.sql
-      - ./database/poblado_tablas.sql:/docker-entrypoint-initdb.d/03-data.sql
+        - colegio_postgres_data:/var/lib/postgresql/data
+        - ./database/script_colegio.sql:/docker-entrypoint-initdb.d/01-script.sql
+        - ./database/triggers_colegio.sql:/docker-entrypoint-initdb.d/02-triggers.sql
+        - ./database/indices_y_procedimientos.sql:/docker-entrypoint-initdb.d/03-indices.sql
+        - ./database/poblado_tablas.sql:/docker-entrypoint-initdb.d/04-data.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d colegio_db"]
       interval: 5s
