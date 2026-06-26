@@ -127,7 +127,7 @@
     </nav>
 
     <main class="container mt-5 py-4">
-      <RouterView />
+      <RouterView :key="$route.fullPath"/>
     </main>
   </div>
 </template>

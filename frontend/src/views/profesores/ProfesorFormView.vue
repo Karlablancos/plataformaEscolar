@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref, onMounted } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAcademicStore } from '@/stores/academicStore'
 import api from '@/api/axios'
@@ -14,7 +14,7 @@ const esEdicion = computed(() => Boolean(route.params.id))
 const comunas = ref([])
 const categoriasSned = computed(() => academicStore.categoriasSned)
 
-const form = reactive({
+const formInicial = {
   id_usuario: null,
   id_categoria_sned: null,
   anio_evaluacion_sned: new Date().getFullYear(),
@@ -34,23 +34,35 @@ const form = reactive({
 
   fecha_contratacion: '',
   estado: 'Activo',
-})
+}
 
-onMounted(async () => {
-  const { data } = await api.get('/establecimiento/comunas')
-  comunas.value = data
+const form = reactive({ ...formInicial })
 
-  if (!esEdicion.value) return
+watch(
+  () => route.path,
+  async () => {
+    try {
+      const { data } = await api.get('/establecimiento/comunas')
+      comunas.value = Array.isArray(data) ? data : []
+    } catch (error) {
+      console.error('Error al cargar comunas:', error)
+    }
 
-  const profesor = academicStore.getProfesorById(profesorId.value)
+    Object.assign(form, formInicial)
 
-  if (!profesor) {
-    router.push('/admin/profesores')
-    return
-  }
+    if (!esEdicion.value) return
 
-  Object.assign(form, profesor)
-})
+    const profesor = academicStore.getProfesorById(profesorId.value)
+
+    if (!profesor) {
+      router.push('/admin/profesores')
+      return
+    }
+
+    Object.assign(form, profesor)
+  },
+  { immediate: true },
+)
 
 const guardar = () => {
   if (esEdicion.value) {
