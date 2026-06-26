@@ -1,6 +1,6 @@
 <template>
   <div>
-    <nav class="navbar navbar-expand-lg bg-dark navbar-dark navbar-colegio">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-colegio" style="background: linear-gradient(135deg, #6f42c1 0%, #4b0082 100%)">
       <div class="container">
         <div class="d-flex flex-column">
           <RouterLink class="navbar-brand fw-bold mb-0 p-0" :to="homePath">

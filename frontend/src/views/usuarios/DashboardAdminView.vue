@@ -202,8 +202,8 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useAcademicStore } from '../stores/academicStore'
-import { useAuthStore } from '../stores/authStore'
+import { useAcademicStore } from '@/stores/academicStore'
+import { useAuthStore } from '@/stores/authStore'
 import api from '@/api/axios'
 
 const academic = useAcademicStore()
