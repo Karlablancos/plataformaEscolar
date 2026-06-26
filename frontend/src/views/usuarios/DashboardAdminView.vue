@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-      <h1 class="fw-bold mb-1">Dashboard UTP</h1>
+      <h1 class="fw-bold mb-1">Dashboard Administrador</h1>
       <p class="text-muted mb-0">Resumen académico del año {{ anioActivo }}.</p>
     </div>
 
