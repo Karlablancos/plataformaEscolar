@@ -14,6 +14,7 @@ import com.colegio.establecimiento.dto.SalaDTO;
 import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.service.EstablecimientoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -132,6 +133,14 @@ public class EstablecimientoController {
     @GetMapping("/{id}/estudiantes")
     public ResponseEntity<List<EstudianteDTO>> listarEstudiantes(@PathVariable Integer id) {
         return ResponseEntity.ok(establecimientoService.listarEstudiantes(id));
+    }
+
+    @PostMapping("/{id}/estudiantes")
+    public ResponseEntity<EstudianteDTO> crearEstudiante(
+            @PathVariable Integer id,
+            @RequestBody EstudianteDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(establecimientoService.crearEstudiante(id, dto));
     }
 
     @GetMapping("/{id}/cursos/{idCurso}/estudiantes")

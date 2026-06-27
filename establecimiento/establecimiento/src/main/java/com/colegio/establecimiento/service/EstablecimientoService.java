@@ -20,8 +20,10 @@ import com.colegio.establecimiento.model.Establecimiento;
 import com.colegio.establecimiento.model.Estudiante;
 import com.colegio.establecimiento.model.EstudianteCurso;
 import com.colegio.establecimiento.model.Region;
+import com.colegio.establecimiento.model.Rol;
 import com.colegio.establecimiento.model.Sala;
 import com.colegio.establecimiento.model.TipoCalificacion;
+import com.colegio.establecimiento.model.Usuario;
 import com.colegio.establecimiento.repository.AsignaturaRepository;
 import com.colegio.establecimiento.repository.ComunaRepository;
 import com.colegio.establecimiento.repository.CursoAsignaturaRepository;
@@ -31,13 +33,16 @@ import com.colegio.establecimiento.repository.EstablecimientoRepository;
 import com.colegio.establecimiento.repository.EstudianteCursoRepository;
 import com.colegio.establecimiento.repository.EstudianteRepository;
 import com.colegio.establecimiento.repository.RegionRepository;
+import com.colegio.establecimiento.repository.RolRepository;
 import com.colegio.establecimiento.repository.SalaRepository;
 import com.colegio.establecimiento.repository.TipoCalificacionRepository;
+import com.colegio.establecimiento.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +63,8 @@ public class EstablecimientoService {
     private final RegionRepository regionRepository;
     private final ComunaRepository comunaRepository;
     private final SalaRepository salaRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
 
     public List<EstablecimientoDTO> listarTodos(Integer idEstablecimiento) {
         List<Establecimiento> fuente = (idEstablecimiento != null)
@@ -298,6 +305,72 @@ public class EstablecimientoService {
                 .toList();
     }
 
+    public EstudianteDTO crearEstudiante(Integer idEstablecimiento, EstudianteDTO dto) {
+        validarEstablecimiento(idEstablecimiento);
+        validarDatosEstudiante(dto);
+
+        Rol rolEstudiante = rolRepository.findByNombreRol("ESTUDIANTE")
+                .orElseThrow(() -> new IllegalArgumentException("Rol ESTUDIANTE no encontrado en el sistema."));
+
+        Usuario usuario = new Usuario();
+        usuario.setIdEstablecimiento(idEstablecimiento);
+        usuario.setIdRol(rolEstudiante.getIdRol());
+        usuario.setUsername(dto.getRut().trim() + dto.getDv().trim().toUpperCase());
+        usuario.setPasswordHash("SIN_ACCESO");
+        usuario.setCorreoElectronico(dto.getCorreoElectronico().trim());
+        usuario.setIntentosFallidos(0);
+        usuario.setBloqueado(true);
+        usuario.setFechaCreacion(LocalDateTime.now());
+        usuario.setEstado("INACTIVO");
+        Integer idUsuario = usuarioRepository.save(usuario).getIdUsuario();
+
+        Estudiante estudiante = new Estudiante();
+        estudiante.setIdEstablecimiento(idEstablecimiento);
+        estudiante.setIdUsuario(idUsuario);
+        estudiante.setRut(dto.getRut().trim());
+        estudiante.setDv(dto.getDv().trim().toUpperCase());
+        estudiante.setNombres(dto.getNombres().trim());
+        estudiante.setApellidoPaterno(dto.getApellidoPaterno().trim());
+        estudiante.setApellidoMaterno(dto.getApellidoMaterno() != null ? dto.getApellidoMaterno().trim() : "");
+        estudiante.setFechaNacimiento(dto.getFechaNacimiento());
+        estudiante.setCorreoElectronico(dto.getCorreoElectronico().trim());
+        estudiante.setTelefono(dto.getTelefono() != null ? dto.getTelefono().trim() : "");
+        estudiante.setCalle(dto.getCalle() != null ? dto.getCalle().trim() : "");
+        estudiante.setNumero(dto.getNumero() != null ? dto.getNumero().trim() : "");
+        estudiante.setIdComuna(dto.getIdComuna() != null ? dto.getIdComuna() : 1);
+        estudiante.setColegioProcedente(dto.getColegioProcedente() != null ? dto.getColegioProcedente().trim() : "");
+        estudiante.setFechaMatricula(dto.getFechaMatricula() != null ? dto.getFechaMatricula() : LocalDate.now());
+        estudiante.setPrioritario(Boolean.TRUE.equals(dto.getPrioritario()));
+        estudiante.setPreferente(Boolean.TRUE.equals(dto.getPreferente()));
+        estudiante.setTieneNee(Boolean.TRUE.equals(dto.getTieneNee()));
+        estudiante.setIdTipoNee(Boolean.TRUE.equals(dto.getTieneNee()) ? dto.getIdTipoNee() : null);
+        estudiante.setEnPie(Boolean.TRUE.equals(dto.getEnPie()));
+        estudiante.setEstado(normalizarEstado(dto.getEstado()));
+
+        return toEstudianteDTO(estudianteRepository.save(estudiante), null);
+    }
+
+    private void validarDatosEstudiante(EstudianteDTO dto) {
+        if (dto.getRut() == null || dto.getRut().isBlank()) {
+            throw new IllegalArgumentException("El RUT es obligatorio.");
+        }
+        if (dto.getDv() == null || dto.getDv().isBlank()) {
+            throw new IllegalArgumentException("El dígito verificador es obligatorio.");
+        }
+        if (dto.getNombres() == null || dto.getNombres().isBlank()) {
+            throw new IllegalArgumentException("Los nombres son obligatorios.");
+        }
+        if (dto.getApellidoPaterno() == null || dto.getApellidoPaterno().isBlank()) {
+            throw new IllegalArgumentException("El apellido paterno es obligatorio.");
+        }
+        if (dto.getFechaNacimiento() == null) {
+            throw new IllegalArgumentException("La fecha de nacimiento es obligatoria.");
+        }
+        if (dto.getCorreoElectronico() == null || dto.getCorreoElectronico().isBlank()) {
+            throw new IllegalArgumentException("El correo electrónico es obligatorio.");
+        }
+    }
+
     public List<EstudianteDTO> listarEstudiantesPorCurso(
             Integer idEstablecimiento, Integer idCurso) {
         validarCurso(idEstablecimiento, idCurso);
@@ -533,10 +606,15 @@ public class EstablecimientoService {
         dto.setFechaNacimiento(e.getFechaNacimiento());
         dto.setCorreoElectronico(e.getCorreoElectronico());
         dto.setTelefono(e.getTelefono());
+        dto.setCalle(e.getCalle());
+        dto.setNumero(e.getNumero());
+        dto.setIdComuna(e.getIdComuna());
+        dto.setColegioProcedente(e.getColegioProcedente());
         dto.setFechaMatricula(e.getFechaMatricula());
         dto.setPrioritario(e.getPrioritario());
         dto.setPreferente(e.getPreferente());
         dto.setTieneNee(e.getTieneNee());
+        dto.setIdTipoNee(e.getIdTipoNee());
         dto.setEnPie(e.getEnPie());
         dto.setEstado(e.getEstado());
         dto.setIdCurso(idCurso);

@@ -12,6 +12,9 @@ const tiposNee = computed(() => academic.tiposNee)
 
 const regiones = ref([])
 const regionId = ref(null)
+const guardando = ref(false)
+const mensajeError = ref('')
+const rutFormateado = ref('')
 
 const comunasFiltradas = computed(() => {
   if (!regionId.value) return []
@@ -19,21 +22,10 @@ const comunasFiltradas = computed(() => {
   return region?.comunas ?? []
 })
 
-watch(regionId, () => {
-  form.comunaId = null
-})
-
-onMounted(async () => {
-  const { data } = await api.get('/establecimiento/regiones')
-  regiones.value = data
-})
-
 const form = reactive({
   nombres: '',
   apellidoPaterno: '',
   apellidoMaterno: '',
-  rut: '',
-  sexo: '',
   fechaNacimiento: '',
   correoElectronico: '',
   telefono: '',
@@ -51,26 +43,70 @@ const form = reactive({
   estado: 'Activo',
 })
 
-const nombreCompleto = computed(() =>
-  `${form.nombres} ${form.apellidoPaterno} ${form.apellidoMaterno}`.replace(/\s+/g, ' ').trim(),
-)
+watch(regionId, () => {
+  form.comunaId = null
+})
 
-const guardarAlumno = () => {
-  if (!form.nombres || !form.apellidoPaterno || !form.rut) {
-    alert('Completa al menos nombres, apellido paterno y RUT.')
+onMounted(async () => {
+  const { data } = await api.get('/establecimiento/regiones')
+  regiones.value = data
+})
+
+// ── RUT chileno auto-formato ──────────────────────────────────────────────────
+const formatearRut = (valor) => {
+  const limpio = valor.replace(/[^0-9kK]/g, '').toUpperCase()
+  if (!limpio) return ''
+  const dv = limpio.slice(-1)
+  const numero = limpio.slice(0, -1)
+  if (!numero) return dv
+  const conPuntos = numero.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${conPuntos}-${dv}`
+}
+
+const onRutInput = (e) => {
+  rutFormateado.value = formatearRut(e.target.value)
+}
+
+const extraerRutParts = () => {
+  const limpio = rutFormateado.value.replace(/[^0-9kK]/gi, '').toUpperCase()
+  return { rut: limpio.slice(0, -1), dv: limpio.slice(-1) }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+const guardarAlumno = async () => {
+  mensajeError.value = ''
+
+  const { rut, dv } = extraerRutParts()
+
+  if (!form.nombres || !form.apellidoPaterno) {
+    mensajeError.value = 'Nombres y apellido paterno son obligatorios.'
+    return
+  }
+  if (!rut || !dv) {
+    mensajeError.value = 'Ingresa un RUT válido con dígito verificador.'
+    return
+  }
+  if (!form.fechaNacimiento) {
+    mensajeError.value = 'La fecha de nacimiento es obligatoria.'
+    return
+  }
+  if (!form.correoElectronico) {
+    mensajeError.value = 'El correo electrónico es obligatorio.'
     return
   }
 
-  const nuevoAlumno = {
-    ...form,
-    nombre: nombreCompleto.value,
-    cursoId: form.cursoId ? Number(form.cursoId) : null,
-    comunaId: form.comunaId ? Number(form.comunaId) : null,
-    tipoNeeId: form.tieneNee && form.tipoNeeId ? Number(form.tipoNeeId) : null,
+  guardando.value = true
+  try {
+    await academic.agregarAlumno({ ...form, rut, dv })
+    router.push('/admin/alumnos')
+  } catch (error) {
+    mensajeError.value =
+      error?.response?.data?.mensaje ||
+      error?.message ||
+      'Error al guardar el alumno. Intenta nuevamente.'
+  } finally {
+    guardando.value = false
   }
-
-  academic.agregarAlumno(nuevoAlumno)
-  router.push('/admin/alumnos')
 }
 </script>
 
@@ -81,22 +117,32 @@ const guardarAlumno = () => {
         <h1 class="h3 mb-1">Agregar alumno</h1>
         <p class="text-muted mb-0">Registro básico del estudiante.</p>
       </div>
-
-      <RouterLink to="/admin/alumnos" class="btn btn-outline-info">← Volver al listado </RouterLink>
+      <RouterLink to="/admin/alumnos" class="btn btn-outline-secondary btn-rounded">
+        ← Volver al listado
+      </RouterLink>
     </div>
 
-    <form class="card" @submit.prevent="guardarAlumno">
+    <div v-if="mensajeError" class="alert alert-danger alert-dismissible fade show">
+      {{ mensajeError }}
+      <button type="button" class="btn-close" @click="mensajeError = ''"></button>
+    </div>
+
+    <form class="card border-0 shadow-sm" @submit.prevent="guardarAlumno">
       <div class="card-body">
-        <h2 class="h5 mb-3">Datos personales</h2>
+
+        <!-- Datos personales -->
+        <h2 class="h5 mb-3" style="color:#1B4F9C">
+          <i class="bi bi-person me-2"></i>Datos personales
+        </h2>
 
         <div class="row g-3 mb-4">
           <div class="col-md-4">
-            <label class="form-label">Nombres</label>
+            <label class="form-label">Nombres <span class="text-danger">*</span></label>
             <input v-model="form.nombres" type="text" class="form-control" required />
           </div>
 
           <div class="col-md-4">
-            <label class="form-label">Apellido paterno</label>
+            <label class="form-label">Apellido paterno <span class="text-danger">*</span></label>
             <input v-model="form.apellidoPaterno" type="text" class="form-control" required />
           </div>
 
@@ -106,14 +152,17 @@ const guardarAlumno = () => {
           </div>
 
           <div class="col-md-4">
-            <label class="form-label">RUT</label>
+            <label class="form-label">RUT <span class="text-danger">*</span></label>
             <input
-              v-model="form.rut"
+              :value="rutFormateado"
+              @input="onRutInput"
               type="text"
               class="form-control"
-              placeholder="12.345.678-9"
+              placeholder="21.345.678-9"
+              maxlength="12"
               required
             />
+            <div class="form-text">Se formatea automáticamente.</div>
           </div>
 
           <div class="col-md-4">
@@ -127,17 +176,22 @@ const guardarAlumno = () => {
           </div>
 
           <div class="col-md-4">
-            <label class="form-label">Fecha de nacimiento</label>
-            <input v-model="form.fechaNacimiento" type="date" class="form-control" />
+            <label class="form-label">Fecha de nacimiento <span class="text-danger">*</span></label>
+            <input v-model="form.fechaNacimiento" type="date" class="form-control" required />
           </div>
         </div>
 
-        <h2 class="h5 mb-3">Contacto y dirección</h2>
+        <hr class="my-3">
+
+        <!-- Contacto y dirección -->
+        <h2 class="h5 mb-3" style="color:#1B4F9C">
+          <i class="bi bi-geo-alt me-2"></i>Contacto y dirección
+        </h2>
 
         <div class="row g-3 mb-4">
           <div class="col-md-6">
-            <label class="form-label">Correo electrónico</label>
-            <input v-model="form.correoElectronico" type="email" class="form-control" />
+            <label class="form-label">Correo electrónico <span class="text-danger">*</span></label>
+            <input v-model="form.correoElectronico" type="email" class="form-control" required />
           </div>
 
           <div class="col-md-6">
@@ -176,7 +230,12 @@ const guardarAlumno = () => {
           </div>
         </div>
 
-        <h2 class="h5 mb-3">Información académica</h2>
+        <hr class="my-3">
+
+        <!-- Información académica -->
+        <h2 class="h5 mb-3" style="color:#1B4F9C">
+          <i class="bi bi-book me-2"></i>Información académica
+        </h2>
 
         <div class="row g-3 mb-4">
           <div class="col-md-4">
@@ -209,49 +268,39 @@ const guardarAlumno = () => {
           </div>
         </div>
 
-        <h2 class="h5 mb-3">Indicadores</h2>
+        <hr class="my-3">
+
+        <!-- Indicadores -->
+        <h2 class="h5 mb-3" style="color:#1B4F9C">
+          <i class="bi bi-flag me-2"></i>Indicadores
+        </h2>
 
         <div class="row g-3">
           <div class="col-md-3">
             <div class="form-check">
-              <input
-                id="prioritario"
-                v-model="form.prioritario"
-                class="form-check-input"
-                type="checkbox"
-              />
-              <label class="form-check-label" for="prioritario"> Alumno prioritario </label>
+              <input id="prioritario" v-model="form.prioritario" class="form-check-input" type="checkbox" />
+              <label class="form-check-label" for="prioritario">Alumno prioritario</label>
             </div>
           </div>
 
           <div class="col-md-3">
             <div class="form-check">
-              <input
-                id="preferente"
-                v-model="form.preferente"
-                class="form-check-input"
-                type="checkbox"
-              />
-              <label class="form-check-label" for="preferente"> Alumno preferente </label>
+              <input id="preferente" v-model="form.preferente" class="form-check-input" type="checkbox" />
+              <label class="form-check-label" for="preferente">Alumno preferente</label>
             </div>
           </div>
 
           <div class="col-md-3">
             <div class="form-check">
-              <input
-                id="tieneNee"
-                v-model="form.tieneNee"
-                class="form-check-input"
-                type="checkbox"
-              />
-              <label class="form-check-label" for="tieneNee"> Tiene NEE </label>
+              <input id="tieneNee" v-model="form.tieneNee" class="form-check-input" type="checkbox" />
+              <label class="form-check-label" for="tieneNee">Tiene NEE</label>
             </div>
           </div>
 
           <div class="col-md-3">
             <div class="form-check">
               <input id="enPie" v-model="form.enPie" class="form-check-input" type="checkbox" />
-              <label class="form-check-label" for="enPie"> Programa PIE </label>
+              <label class="form-check-label" for="enPie">Programa PIE</label>
             </div>
           </div>
 
@@ -265,12 +314,18 @@ const guardarAlumno = () => {
             </select>
           </div>
         </div>
+
       </div>
 
       <div class="card-footer d-flex justify-content-end gap-2">
-        <RouterLink to="/admin/alumnos" class="btn btn-rounded btn-danger"> Cancelar </RouterLink>
+        <RouterLink to="/admin/alumnos" class="btn btn-rounded btn-danger">
+          Cancelar
+        </RouterLink>
 
-        <button type="submit" class="btn btn-success btn-rounded">Guardar alumno</button>
+        <button type="submit" class="btn btn-success btn-rounded" :disabled="guardando">
+          <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
+          Guardar alumno
+        </button>
       </div>
     </form>
   </div>

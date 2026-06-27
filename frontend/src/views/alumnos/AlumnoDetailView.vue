@@ -1,12 +1,45 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAcademicStore } from '../../stores/academicStore'
 import AlumnoApoderadoModal from '../../components/alumnos/AlumnoApoderadoModal.vue'
+import api from '@/api/axios'
 
 const route = useRoute()
 const router = useRouter()
 const academic = useAcademicStore()
+
+const regiones = ref([])
+const regionId = ref(null)
+
+const comunasFiltradas = computed(() => {
+  if (!regionId.value) return []
+  const region = regiones.value.find((r) => r.idRegion === regionId.value)
+  return region?.comunas ?? []
+})
+
+onMounted(async () => {
+  const { data } = await api.get('/establecimiento/regiones')
+  regiones.value = data
+  // Si el alumno ya cargó antes que las regiones, pre-seleccionar región ahora
+  if (form.comunaId) preseleccionarRegion(form.comunaId)
+})
+
+const preseleccionarRegion = (idComuna) => {
+  if (!idComuna || !regiones.value.length) return
+  const region = regiones.value.find((r) =>
+    r.comunas?.some((c) => c.idComuna === idComuna),
+  )
+  if (region) regionId.value = region.idRegion
+}
+
+watch(regionId, (nuevo, anterior) => {
+  // Solo resetear si el usuario cambió la región manualmente (no al pre-seleccionar)
+  if (anterior !== null && form.comunaId) {
+    const comunaEnRegion = comunasFiltradas.value.some((c) => c.idComuna === form.comunaId)
+    if (!comunaEnRegion) form.comunaId = null
+  }
+})
 
 const activeTab = ref('resumen')
 
@@ -33,7 +66,7 @@ const form = reactive({
   telefono: '',
   calle: '',
   numero: '',
-  comuna: '',
+  comunaId: null,
   colegioProcedente: '',
   fechaMatricula: '',
   cursoId: '',
@@ -50,6 +83,7 @@ watch(
   () => {
     if (!alumno.value) return
 
+    const idComuna = alumno.value.idComuna ?? alumno.value.id_comuna ?? null
     Object.assign(form, {
       nombres: alumno.value.nombres || '',
       apellidoPaterno: alumno.value.apellidoPaterno || '',
@@ -61,7 +95,7 @@ watch(
       telefono: alumno.value.telefono || '',
       calle: alumno.value.calle || '',
       numero: alumno.value.numero || '',
-      comuna: alumno.value.comuna || '',
+      comunaId: idComuna,
       colegioProcedente: alumno.value.colegioProcedente || '',
       fechaMatricula: normalizarFechaInput(alumno.value.fechaMatricula),
       cursoId: alumno.value.cursoId || '',
@@ -72,6 +106,8 @@ watch(
       enPie: Boolean(alumno.value.enPie),
       estado: alumno.value.estado || 'Activo',
     })
+    // Pre-seleccionar región si las regiones ya cargaron
+    if (regiones.value.length) preseleccionarRegion(idComuna)
   },
   { immediate: true },
 )
@@ -355,14 +391,29 @@ function guardarApoderado(payload) {
                     <input v-model="form.calle" type="text" class="form-control" />
                   </div>
 
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <label class="form-label">Número</label>
                     <input v-model="form.numero" type="text" class="form-control" />
                   </div>
 
-                  <div class="col-md-4">
+                  <div class="col-md-5">
+                    <label class="form-label">Región</label>
+                    <select v-model="regionId" class="form-select">
+                      <option :value="null">Seleccionar región</option>
+                      <option v-for="region in regiones" :key="region.idRegion" :value="region.idRegion">
+                        {{ region.nombreRegion }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-5 offset-md-7">
                     <label class="form-label">Comuna</label>
-                    <input v-model="form.comuna" type="text" class="form-control" />
+                    <select v-model="form.comunaId" class="form-select" :disabled="!regionId">
+                      <option :value="null">Seleccionar comuna</option>
+                      <option v-for="comuna in comunasFiltradas" :key="comuna.idComuna" :value="comuna.idComuna">
+                        {{ comuna.nombreComuna }}
+                      </option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -558,7 +609,7 @@ function guardarApoderado(payload) {
                 </div>
 
                 <h2 class="h5 mb-1">{{ alumno.nombre }}</h2>
-                <p class="text-muted mb-3">{{ alumno.rut }}</p>
+                <p class="text-muted mb-3">{{ alumno.rutFormateado || alumno.rut }}</p>
               </div>
             </div>
           </div>
@@ -571,7 +622,7 @@ function guardarApoderado(payload) {
                   <div class="col-md-6">
                     <div class="text-muted small">Apoderado titular</div>
                     <div class="fw-semibold">
-                      {{ apoderadoTitular?.nombre || 'Sin apoderado titular' }}
+                      {{ apoderadoTitular?.nombre || 'Sin apoderado registrado' }}
                     </div>
                   </div>
 
@@ -616,7 +667,8 @@ function guardarApoderado(payload) {
           <div class="card-body">
             <div class="row g-3">
               <div class="col-md-4">
-                <span class="text-muted small d-block">RUT</span><strong>{{ alumno.rut }}</strong>
+                <span class="text-muted small d-block">RUT</span>
+                <strong>{{ alumno.rutFormateado || alumno.rut }}</strong>
               </div>
               <div class="col-md-4">
                 <span class="text-muted small d-block">Sexo</span

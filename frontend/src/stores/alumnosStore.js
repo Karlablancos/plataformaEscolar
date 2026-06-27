@@ -10,7 +10,7 @@ import {
 
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getNombreCompleto } from './shared/helpers'
-import { mapEstudianteFromApi } from './shared/estudianteMapper'
+import { mapEstudianteFromApi, toEstudiantePayload } from './shared/estudianteMapper'
 import api from '@/api/axios'
 
 const getAlumnoId = (alumno) => alumno.id_alumno ?? alumno.id
@@ -175,6 +175,7 @@ export const useAlumnosStore = defineStore('alumnos', {
         const { data } = await api.get(`/establecimiento/${idEstablecimiento}/estudiantes`)
         this.alumnos = data.map(mapEstudianteFromApi)
         localStorage.removeItem('alumnos')
+        this.limpiarDatosMock()
       } catch (error) {
         this.alumnos = []
         throw error
@@ -208,36 +209,29 @@ export const useAlumnosStore = defineStore('alumnos', {
       saveToStorage('documentosEstudiante', this.documentosEstudiante)
     },
 
-    agregarAlumno(data) {
-      const establecimientoId = getEstablecimientoId()
-      const id = Date.now()
+    async agregarAlumno(data) {
+      const idEstablecimiento =
+        getEstablecimientoId() ??
+        JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
 
-      const nuevoAlumno = {
-        id_alumno: id,
-        id_establecimiento: establecimientoId,
-
-        // Compatibilidad temporal
-        id,
-        establecimientoId,
-
-        estado: 'Activo',
-        asistencia: 0,
-        promedio: 0,
-        prioritario: false,
-        preferente: false,
-        tieneNee: false,
-        tipoNeeId: null,
-        enPie: false,
-
-        cursoId: data.cursoId || null,
-
-        ...data,
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
       }
 
-      this.alumnos.push(nuevoAlumno)
-      this.persistir()
-
-      return nuevoAlumno
+      this.cargando = true
+      try {
+        const { data: creado } = await api.post(
+          `/establecimiento/${idEstablecimiento}/estudiantes`,
+          toEstudiantePayload(data),
+        )
+        const alumno = mapEstudianteFromApi(creado)
+        this.alumnos.push(alumno)
+        return alumno
+      } catch (error) {
+        throw error
+      } finally {
+        this.cargando = false
+      }
     },
 
     actualizarAlumno(id, data) {
@@ -434,9 +428,17 @@ export const useAlumnosStore = defineStore('alumnos', {
       this.persistir()
     },
 
+    limpiarDatosMock() {
+      this.apoderados = []
+      this.estudianteApoderado = []
+      localStorage.removeItem('apoderados')
+      localStorage.removeItem('estudianteApoderado')
+    },
+
     resetData() {
-      this.apoderados = [...apoderadosMock]
-      this.estudianteApoderado = [...estudianteApoderadoMock]
+      this.alumnos = []
+      this.apoderados = []
+      this.estudianteApoderado = []
       this.tiposNee = [...tiposNeeMock]
       this.antecedentesSalud = [...antecedentesSaludMock]
       this.antecedentesFamiliares = [...antecedentesFamiliaresMock]

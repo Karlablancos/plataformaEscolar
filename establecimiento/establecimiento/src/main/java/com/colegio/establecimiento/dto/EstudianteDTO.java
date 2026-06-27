@@ -17,10 +17,15 @@ public class EstudianteDTO {
     private LocalDate fechaNacimiento;
     private String correoElectronico;
     private String telefono;
+    private String calle;
+    private String numero;
+    private Integer idComuna;
+    private String colegioProcedente;
     private LocalDate fechaMatricula;
     private Boolean prioritario;
     private Boolean preferente;
     private Boolean tieneNee;
+    private Integer idTipoNee;
     private Boolean enPie;
     private String estado;
     private Integer idCurso;
