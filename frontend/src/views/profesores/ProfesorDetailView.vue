@@ -143,6 +143,8 @@ const tabActiva = ref('datos')
 const comunas = ref([])
 
 onMounted(async () => {
+  await academicStore.cargarDocentes().catch(() => {})
+
   const { data } = await api.get('/establecimiento/comunas')
   comunas.value = data
 })

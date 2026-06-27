@@ -14,7 +14,12 @@
     </div>
 
     <div class="card">
-      <div class="table-responsive">
+      <div v-if="cargando" class="card-body text-center py-4">
+        <span class="spinner-border spinner-border-sm text-primary me-2" />
+        Cargando profesores...
+      </div>
+
+      <div v-else class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
@@ -75,11 +80,19 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAcademicStore } from '@/stores/academicStore'
+import { useDocentesStore } from '@/stores/docentesStore'
 
 const academicStore = useAcademicStore()
+const docentesStore = useDocentesStore()
+
+const cargando = computed(() => docentesStore.cargando)
+
+onMounted(() => {
+  academicStore.cargarDocentes().catch(() => {})
+})
 
 const profesores = computed(() => academicStore.profesoresFiltrados)
 </script>
