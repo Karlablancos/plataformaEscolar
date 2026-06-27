@@ -221,7 +221,7 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.publicOnly && token && user) {
-    if (to.path.startsWith('/admin') || to.path.startsWith('/profesor')) return
+    if (to.path.startsWith('/admin') || to.path.startsWith('/profesor')) return true
     if (user.rol === 'DOCENTE') return '/profesor/dashboard-docente'
     if (user.rol === 'ADMINISTRADOR') return '/admin/dashboard-admin'
     return '/admin/dashboard-admin'
