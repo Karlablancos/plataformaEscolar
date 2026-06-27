@@ -7,6 +7,7 @@ import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
 import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
+import com.colegio.establecimiento.dto.EstudianteCreateRequestDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.dto.PeriodoAcademicoDTO;
 import com.colegio.establecimiento.dto.RegionDTO;
@@ -20,6 +21,8 @@ import com.colegio.establecimiento.model.Docente;
 import com.colegio.establecimiento.model.Establecimiento;
 import com.colegio.establecimiento.model.Estudiante;
 import com.colegio.establecimiento.model.EstudianteCurso;
+import com.colegio.establecimiento.model.Rol;
+import com.colegio.establecimiento.model.Usuario;
 import com.colegio.establecimiento.model.Horario;
 import com.colegio.establecimiento.model.PeriodoAcademico;
 import com.colegio.establecimiento.model.Region;
@@ -33,6 +36,8 @@ import com.colegio.establecimiento.repository.DocenteRepository;
 import com.colegio.establecimiento.repository.EstablecimientoRepository;
 import com.colegio.establecimiento.repository.EstudianteCursoRepository;
 import com.colegio.establecimiento.repository.EstudianteRepository;
+import com.colegio.establecimiento.repository.RolRepository;
+import com.colegio.establecimiento.repository.UsuarioRepository;
 import com.colegio.establecimiento.repository.HorarioRepository;
 import com.colegio.establecimiento.repository.PeriodoAcademicoRepository;
 import com.colegio.establecimiento.repository.RegionRepository;
@@ -41,8 +46,10 @@ import com.colegio.establecimiento.repository.TipoCalificacionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +58,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class EstablecimientoService {
+
+    private static final String DEFAULT_PASSWORD_HASH =
+            "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi";
 
     private final EstablecimientoRepository establecimientoRepository;
     private final CursoRepository cursoRepository;
@@ -65,6 +75,8 @@ public class EstablecimientoService {
     private final ComunaRepository comunaRepository;
     private final SalaRepository salaRepository;
     private final HorarioRepository horarioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
 
     public List<EstablecimientoDTO> listarTodos(Integer idEstablecimiento) {
         List<Establecimiento> fuente = (idEstablecimiento != null)
@@ -290,6 +302,70 @@ public class EstablecimientoService {
         dto.setEntraPromedio(tipo.getEntraPromedio());
         dto.setMinimoAprobacion(tipo.getMinimoAprobacion());
         return dto;
+    }
+
+    @Transactional
+    public EstudianteDTO crearEstudiante(
+            Integer idEstablecimiento, EstudianteCreateRequestDTO request) {
+        validarEstablecimiento(idEstablecimiento);
+
+        if (request == null || request.getNombres() == null || request.getNombres().isBlank()) {
+            throw new IllegalArgumentException("Los nombres del estudiante son obligatorios.");
+        }
+        if (request.getApellidoPaterno() == null || request.getApellidoPaterno().isBlank()) {
+            throw new IllegalArgumentException("El apellido paterno es obligatorio.");
+        }
+        if (request.getRut() == null || request.getRut().isBlank()) {
+            throw new IllegalArgumentException("El RUT es obligatorio.");
+        }
+
+        RutPart rutPart = parseRut(request.getRut());
+        Integer idUsuario = crearUsuarioEstudiante(idEstablecimiento, rutPart, request);
+
+        Estudiante estudiante = new Estudiante();
+        estudiante.setIdEstablecimiento(idEstablecimiento);
+        estudiante.setIdUsuario(idUsuario);
+        estudiante.setRut(rutPart.rut());
+        estudiante.setDv(rutPart.dv());
+        estudiante.setNombres(request.getNombres().trim());
+        estudiante.setApellidoPaterno(request.getApellidoPaterno().trim());
+        estudiante.setApellidoMaterno(
+                request.getApellidoMaterno() != null ? request.getApellidoMaterno().trim() : "");
+        estudiante.setFechaNacimiento(
+                request.getFechaNacimiento() != null
+                        ? request.getFechaNacimiento()
+                        : LocalDate.of(2010, 1, 1));
+        estudiante.setCorreoElectronico(
+                valorODefault(request.getCorreoElectronico(), "sin-correo@bohiggins.cl"));
+        estudiante.setTelefono(valorODefault(request.getTelefono(), "000000000"));
+        estudiante.setCalle(valorODefault(request.getCalle(), "Sin calle"));
+        estudiante.setNumero(valorODefault(request.getNumero(), "S/N"));
+        estudiante.setIdComuna(request.getIdComuna() != null ? request.getIdComuna() : 12);
+        estudiante.setColegioProcedente(
+                valorODefault(request.getColegioProcedente(), "Sin información"));
+        estudiante.setFechaMatricula(
+                request.getFechaMatricula() != null ? request.getFechaMatricula() : LocalDate.now());
+        estudiante.setPrioritario(Boolean.TRUE.equals(request.getPrioritario()));
+        estudiante.setPreferente(Boolean.TRUE.equals(request.getPreferente()));
+        estudiante.setTieneNee(Boolean.TRUE.equals(request.getTieneNee()));
+        estudiante.setIdTipoNee(
+                Boolean.TRUE.equals(request.getTieneNee()) ? request.getIdTipoNee() : null);
+        estudiante.setEnPie(Boolean.TRUE.equals(request.getEnPie()));
+        estudiante.setEstado(normalizarEstadoEstudiante(request.getEstado()));
+
+        Estudiante guardado;
+        try {
+            guardado = estudianteRepository.save(estudiante);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException("No se pudo registrar el estudiante. Verifica RUT y comuna.");
+        }
+
+        if (request.getIdCurso() != null) {
+            return matricularEstudiante(
+                    idEstablecimiento, request.getIdCurso(), guardado.getIdEstudiante());
+        }
+
+        return toEstudianteDTO(guardado, null);
     }
 
     public List<EstudianteDTO> listarEstudiantes(Integer idEstablecimiento) {
@@ -672,6 +748,71 @@ public class EstablecimientoService {
                         EstudianteCurso::getIdEstudiante,
                         EstudianteCurso::getIdCurso,
                         (actual, duplicado) -> actual));
+    }
+
+    private Integer crearUsuarioEstudiante(
+            Integer idEstablecimiento, RutPart rutPart, EstudianteCreateRequestDTO request) {
+        String username = "alumno." + rutPart.rut();
+        if (usuarioRepository.existsByUsernameAndIdEstablecimiento(username, idEstablecimiento)) {
+            throw new IllegalArgumentException("Ya existe un usuario asociado a este RUT.");
+        }
+
+        Integer idRol = rolRepository.findByNombreRolIgnoreCase("APODERADO")
+                .map(Rol::getIdRol)
+                .orElseGet(() -> {
+                    Rol rol = new Rol();
+                    rol.setNombreRol("APODERADO");
+                    rol.setDescripcion("Apoderado / acceso estudiante");
+                    return rolRepository.save(rol).getIdRol();
+                });
+
+        Usuario usuario = new Usuario();
+        usuario.setIdEstablecimiento(idEstablecimiento);
+        usuario.setIdRol(idRol);
+        usuario.setUsername(username);
+        usuario.setPasswordHash(DEFAULT_PASSWORD_HASH);
+        usuario.setCorreoElectronico(
+                valorODefault(request.getCorreoElectronico(), "sin-correo@bohiggins.cl"));
+        usuario.setIntentosFallidos(0);
+        usuario.setBloqueado(false);
+        usuario.setFechaCreacion(LocalDateTime.now());
+        usuario.setEstado("ACTIVO");
+
+        return usuarioRepository.save(usuario).getIdUsuario();
+    }
+
+    private record RutPart(String rut, String dv) {}
+
+    private RutPart parseRut(String rawRut) {
+        String cleaned = rawRut.replaceAll("[^0-9kK]", "");
+        if (cleaned.length() < 2) {
+            throw new IllegalArgumentException("RUT inválido.");
+        }
+
+        String dv = cleaned.substring(cleaned.length() - 1).toUpperCase();
+        String rut = cleaned.substring(0, cleaned.length() - 1);
+        if (rut.length() > 8) {
+            throw new IllegalArgumentException("RUT inválido.");
+        }
+        while (rut.length() < 8) {
+            rut = "0" + rut;
+        }
+
+        return new RutPart(rut, dv);
+    }
+
+    private String valorODefault(String value, String defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return value.trim();
+    }
+
+    private String normalizarEstadoEstudiante(String estado) {
+        if (estado == null || estado.isBlank()) {
+            return "ACTIVO";
+        }
+        return estado.trim().toUpperCase();
     }
 
     private EstudianteDTO toEstudianteDTO(Estudiante e) {

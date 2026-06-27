@@ -7,6 +7,7 @@ import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
 import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
+import com.colegio.establecimiento.dto.EstudianteCreateRequestDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.dto.PeriodoAcademicoDTO;
 import com.colegio.establecimiento.dto.ProfesorJefeRequestDTO;
@@ -133,6 +134,13 @@ public class EstablecimientoController {
     @GetMapping("/{id}/estudiantes")
     public ResponseEntity<List<EstudianteDTO>> listarEstudiantes(@PathVariable Integer id) {
         return ResponseEntity.ok(establecimientoService.listarEstudiantes(id));
+    }
+
+    @PostMapping("/{id}/estudiantes")
+    public ResponseEntity<EstudianteDTO> crearEstudiante(
+            @PathVariable Integer id,
+            @RequestBody EstudianteCreateRequestDTO dto) {
+        return ResponseEntity.ok(establecimientoService.crearEstudiante(id, dto));
     }
 
     @GetMapping("/{id}/cursos/{idCurso}/estudiantes")

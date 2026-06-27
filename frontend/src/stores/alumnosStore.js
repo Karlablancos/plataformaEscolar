@@ -10,7 +10,7 @@ import {
 
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getNombreCompleto } from './shared/helpers'
-import { mapEstudianteFromApi } from './shared/estudianteMapper'
+import { mapEstudianteFromApi, mapEstudianteToApi } from './shared/estudianteMapper'
 import api from '@/api/axios'
 
 const getAlumnoId = (alumno) => alumno.id_alumno ?? alumno.id
@@ -206,6 +206,32 @@ export const useAlumnosStore = defineStore('alumnos', {
       saveToStorage('antecedentesSalud', this.antecedentesSalud)
       saveToStorage('antecedentesFamiliares', this.antecedentesFamiliares)
       saveToStorage('documentosEstudiante', this.documentosEstudiante)
+    },
+
+    async crearAlumno(data) {
+      const idEstablecimiento =
+        getEstablecimientoId() ??
+        JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      const { data: created } = await api.post(
+        `/establecimiento/${idEstablecimiento}/estudiantes`,
+        mapEstudianteToApi(data),
+      )
+
+      const mapped = mapEstudianteFromApi(created)
+      const index = this.alumnos.findIndex((alumno) => getAlumnoId(alumno) === mapped.id)
+
+      if (index === -1) {
+        this.alumnos.push(mapped)
+      } else {
+        this.alumnos[index] = { ...this.alumnos[index], ...mapped }
+      }
+
+      return mapped
     },
 
     agregarAlumno(data) {

@@ -55,7 +55,9 @@ const nombreCompleto = computed(() =>
   `${form.nombres} ${form.apellidoPaterno} ${form.apellidoMaterno}`.replace(/\s+/g, ' ').trim(),
 )
 
-const guardarAlumno = () => {
+const guardando = ref(false)
+
+const guardarAlumno = async () => {
   if (!form.nombres || !form.apellidoPaterno || !form.rut) {
     alert('Completa al menos nombres, apellido paterno y RUT.')
     return
@@ -69,8 +71,19 @@ const guardarAlumno = () => {
     tipoNeeId: form.tieneNee && form.tipoNeeId ? Number(form.tipoNeeId) : null,
   }
 
-  academic.agregarAlumno(nuevoAlumno)
-  router.push('/admin/alumnos')
+  guardando.value = true
+  try {
+    await academic.agregarAlumno(nuevoAlumno)
+    router.push('/admin/alumnos')
+  } catch (error) {
+    console.error('Error al crear alumno:', error)
+    alert(
+      error?.response?.data?.message ||
+        'No se pudo guardar el alumno. Verifica los datos e intenta nuevamente.',
+    )
+  } finally {
+    guardando.value = false
+  }
 }
 </script>
 
@@ -270,7 +283,9 @@ const guardarAlumno = () => {
       <div class="card-footer d-flex justify-content-end gap-2">
         <RouterLink to="/admin/alumnos" class="btn btn-rounded btn-danger"> Cancelar </RouterLink>
 
-        <button type="submit" class="btn btn-success btn-rounded">Guardar alumno</button>
+        <button type="submit" class="btn btn-success btn-rounded" :disabled="guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar alumno' }}
+        </button>
       </div>
     </form>
   </div>

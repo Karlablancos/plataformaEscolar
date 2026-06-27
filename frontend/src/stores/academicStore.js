@@ -102,11 +102,11 @@ export const useAcademicStore = defineStore('academic', {
       useCursosStore().cambiarAnioActivo(anio)
     },
 
-    agregarAlumno(data) {
-      const alumno = useAlumnosStore().agregarAlumno(data)
+    async agregarAlumno(data) {
+      const alumno = await useAlumnosStore().crearAlumno(data)
 
       if (data.cursoId && alumno?.id) {
-        useCursosStore().asignarAlumnoACurso(data.cursoId, alumno.id)
+        await useCursosStore().sincronizarAlumnosCurso(data.cursoId).catch(() => {})
       }
 
       return alumno
