@@ -9,6 +9,7 @@ import com.colegio.usuario.factory.ApoderadoUsuarioFactory;
 import com.colegio.usuario.factory.ProfesorUsuarioFactory;
 import com.colegio.usuario.factory.UsuarioFactory;
 import com.colegio.usuario.model.Usuario;
+import com.colegio.usuario.repository.RolRepository;
 import com.colegio.usuario.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,9 @@ class UsuarioServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @Mock
+    private RolRepository rolRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     private UsuarioService usuarioService;
@@ -44,7 +48,7 @@ class UsuarioServiceTest {
                 new ProfesorUsuarioFactory(),
                 new ApoderadoUsuarioFactory()
         );
-        usuarioService = new UsuarioService(usuarioRepository, passwordEncoder, factories);
+        usuarioService = new UsuarioService(usuarioRepository, rolRepository, passwordEncoder, factories);
         usuarioService.initFactories();
     }
 

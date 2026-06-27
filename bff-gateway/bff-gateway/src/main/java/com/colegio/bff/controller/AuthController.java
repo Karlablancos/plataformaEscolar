@@ -98,21 +98,13 @@ public class AuthController {
     private String normalizarRol(String nombreRol) {
         if (nombreRol == null)
             return "ADMINISTRADOR";
-        return switch (nombreRol.toUpperCase()) {
-            case "ADMINISTRADOR" -> "ADMINISTRADOR";
-            case "DOCENTE" -> "DOCENTE";
-            default -> nombreRol.toUpperCase();
-        };
+        return nombreRol.toUpperCase();
     }
 
     // Fallback cuando findNombreRolById devuelve null — mapea directamente por
     // id_rol
     private String normalizarRolPorId(Integer idRol) {
-        return switch (idRol) {
-            case 1 -> "ADMINISTRADOR";
-            case 2 -> "DOCENTE";
-            default -> "ADMINISTRADOR";
-        };
+        return "ADMINISTRADOR"; // fallback genérico si no hay nombre
     }
 
     public Mono<ResponseEntity<LoginResponse>> loginFallback(LoginRequest request, Throwable t) {
