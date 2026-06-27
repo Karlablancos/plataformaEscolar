@@ -48,6 +48,10 @@ watch(
       console.error('Error al cargar comunas:', error)
     }
 
+    if (esEdicion.value) {
+      await academicStore.cargarDocentes().catch(() => {})
+    }
+
     Object.assign(form, formInicial)
 
     if (!esEdicion.value) return
