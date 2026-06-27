@@ -1,6 +1,7 @@
 package com.colegio.establecimiento.controller;
 
 import com.colegio.establecimiento.dto.AsignaturaDTO;
+import com.colegio.establecimiento.dto.ComunaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
@@ -9,6 +10,7 @@ import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.dto.PeriodoAcademicoDTO;
 import com.colegio.establecimiento.dto.ProfesorJefeRequestDTO;
+import com.colegio.establecimiento.dto.RegionDTO;
 import com.colegio.establecimiento.dto.SalaDTO;
 import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.service.EstablecimientoService;
@@ -200,11 +202,6 @@ public class EstablecimientoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/{id}/salas")
-    public ResponseEntity<List<SalaDTO>> listarSalas(@PathVariable Integer id) {
-        return ResponseEntity.ok(establecimientoService.listarSalas(id));
-    }
-
     @GetMapping("/{id}/cursos/{idCurso}/asignaturas")
     public ResponseEntity<List<CursoAsignaturaDTO>> listarAsignaturasCurso(
             @PathVariable Integer id,
@@ -232,5 +229,47 @@ public class EstablecimientoController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/salas")
+    public ResponseEntity<List<SalaDTO>> listarSalas(@PathVariable Integer id) {
+        return ResponseEntity.ok(establecimientoService.listarSalas(id));
+    }
+
+    @PostMapping("/{id}/salas")
+    public ResponseEntity<SalaDTO> crearSala(
+            @PathVariable Integer id,
+            @RequestBody SalaDTO dto) {
+        return ResponseEntity.ok(establecimientoService.crearSala(id, dto));
+    }
+
+    @PutMapping("/{id}/salas/{idSala}")
+    public ResponseEntity<SalaDTO> actualizarSala(
+            @PathVariable Integer id,
+            @PathVariable Integer idSala,
+            @RequestBody SalaDTO dto) {
+        return establecimientoService.actualizarSala(id, idSala, dto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}/salas/{idSala}")
+    public ResponseEntity<Void> eliminarSala(
+            @PathVariable Integer id,
+            @PathVariable Integer idSala) {
+        if (!establecimientoService.eliminarSala(id, idSala)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/regiones")
+    public ResponseEntity<List<RegionDTO>> listarRegiones() {
+        return ResponseEntity.ok(establecimientoService.listarRegiones());
+    }
+
+    @GetMapping("/comunas")
+    public ResponseEntity<List<ComunaDTO>> listarComunas() {
+        return ResponseEntity.ok(establecimientoService.listarComunas());
     }
 }

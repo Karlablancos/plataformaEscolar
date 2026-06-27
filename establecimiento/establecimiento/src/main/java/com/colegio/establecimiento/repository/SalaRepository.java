@@ -11,6 +11,8 @@ import java.util.Optional;
 @Repository
 public interface SalaRepository extends JpaRepository<Sala, Integer> {
 
+    List<Sala> findByIdEstablecimiento(Integer idEstablecimiento);
+
     List<Sala> findByIdEstablecimientoAndEstadoOrderByNombreAsc(
             Integer idEstablecimiento, String estado);
 

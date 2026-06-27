@@ -1,15 +1,32 @@
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAcademicStore } from '../../stores/academicStore'
-import { comunasMock } from '@/data'
+import api from '@/api/axios'
 
 const router = useRouter()
 const academic = useAcademicStore()
 
 const cursos = computed(() => academic.cursosFiltrados)
-const comunas = computed(() => comunasMock)
 const tiposNee = computed(() => academic.tiposNee)
+
+const regiones = ref([])
+const regionId = ref(null)
+
+const comunasFiltradas = computed(() => {
+  if (!regionId.value) return []
+  const region = regiones.value.find((r) => r.idRegion === regionId.value)
+  return region?.comunas ?? []
+})
+
+watch(regionId, () => {
+  form.comunaId = null
+})
+
+onMounted(async () => {
+  const { data } = await api.get('/establecimiento/regiones')
+  regiones.value = data
+})
 
 const form = reactive({
   nombres: '',
@@ -128,7 +145,7 @@ const guardarAlumno = () => {
             <input v-model="form.telefono" type="text" class="form-control" />
           </div>
 
-          <div class="col-md-5">
+          <div class="col-md-4">
             <label class="form-label">Calle</label>
             <input v-model="form.calle" type="text" class="form-control" />
           </div>
@@ -138,12 +155,22 @@ const guardarAlumno = () => {
             <input v-model="form.numero" type="text" class="form-control" />
           </div>
 
-          <div class="col-md-5">
+          <div class="col-md-3">
+            <label class="form-label">Región</label>
+            <select v-model="regionId" class="form-select">
+              <option :value="null">Seleccionar región</option>
+              <option v-for="region in regiones" :key="region.idRegion" :value="region.idRegion">
+                {{ region.nombreRegion }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
             <label class="form-label">Comuna</label>
-            <select v-model="form.comunaId" class="form-select">
+            <select v-model="form.comunaId" class="form-select" :disabled="!regionId">
               <option :value="null">Seleccionar comuna</option>
-              <option v-for="comuna in comunas" :key="comuna.id" :value="comuna.id">
-                {{ comuna.nombre }}
+              <option v-for="comuna in comunasFiltradas" :key="comuna.idComuna" :value="comuna.idComuna">
+                {{ comuna.nombreComuna }}
               </option>
             </select>
           </div>

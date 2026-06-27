@@ -5,7 +5,9 @@ import com.colegio.usuario.dto.CambiarPasswordRequest;
 import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
 import com.colegio.usuario.factory.UsuarioFactory;
+import com.colegio.usuario.model.Rol;
 import com.colegio.usuario.model.Usuario;
+import com.colegio.usuario.repository.RolRepository;
 import com.colegio.usuario.repository.UsuarioRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final List<UsuarioFactory> factoryList;
 
@@ -34,6 +37,17 @@ public class UsuarioService {
                 .collect(Collectors.toMap(UsuarioFactory::getIdRol, Function.identity()));
         // roles 3 y 4 usan la misma factory de Apoderado
         factories.putIfAbsent(4, factories.get(3));
+    }
+
+    public List<Rol> listarRoles() {
+        return rolRepository.findAll();
+    }
+
+    public Rol crearRol(String nombreRol, String descripcion) {
+        Rol rol = new Rol();
+        rol.setNombreRol(nombreRol.toUpperCase());
+        rol.setDescripcion(descripcion);
+        return rolRepository.save(rol);
     }
 
     public List<UsuarioDTO> listarTodos() {

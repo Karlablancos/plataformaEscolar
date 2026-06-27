@@ -6,6 +6,7 @@ import lombok.Data;
 public class SalaDTO {
 
     private Integer idSala;
+    private Integer idEstablecimiento;
     private Integer numero;
     private String nombre;
     private Integer capacidad;

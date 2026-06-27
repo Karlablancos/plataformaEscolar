@@ -1,16 +1,18 @@
 <template>
   <div>
-    <nav class="navbar navbar-expand-lg bg-dark navbar-dark navbar-colegio">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-colegio" style="background: linear-gradient(135deg, #6f42c1 0%, #4b0082 100%)">
       <div class="container">
+        <img src="/logo-BOH.png" alt="Logo" class="me-2" style="height: 85px; width: 85px;" />
         <div class="d-flex flex-column">
-          <RouterLink class="navbar-brand fw-bold mb-0 p-0" :to="homePath">
-            {{ nombreColegio }}
+          <RouterLink class="navbar-brand fw-bold mb-0 p-0 fs-6"
+            :to="homePath"
+            v-html="nombreColegio.replace(' ', '<br>').replace(' ', '<br>')">
           </RouterLink>
 
           <small class="d-none d-lg-block">
             <span class="text-secondary">Hola! </span>
             <span class="primary-color-light">
-              {{ auth.user?.username || auth.user?.nombre }} ({{ auth.user?.rol }})
+              {{ auth.user?.nombre ||auth.user?.username  }} ({{ auth.user?.rol }})
             </span>
           </small>
         </div>
@@ -30,18 +32,65 @@
         <div id="mainNavbar" class="collapse navbar-collapse justify-content-end">
           <ul class="navbar-nav align-items-lg-center gap-lg-2 mb-2 mb-lg-0">
             <li class="nav-item">
-              <RouterLink class="nav-link" :to="homePath">Inicio</RouterLink>
+              <RouterLink class="nav-link fs-5" :to="homePath">Inicio</RouterLink>
             </li>
 
-            <li class="nav-item" v-if="!auth.isProfesor">
-              <RouterLink class="nav-link" to="/admin/establecimiento">
+            <li class="nav-item" v-if="auth.isAdmin">
+              <RouterLink class="nav-link fs-5" to="/admin/establecimiento">
                 Establecimiento
               </RouterLink>
             </li>
 
+            
+
+            <li class="nav-item">
+              <RouterLink class="nav-link fs-5" :to="cursosPath"> Cursos </RouterLink>
+            </li>
+
+            <li class="nav-item" v-if="auth.isAdmin || auth.isDirector">
+              <RouterLink class="nav-link fs-5" to="/admin/asignaturas"> Asignaturas </RouterLink>
+            </li>
+
+            <li class="nav-item" v-if="auth.isAdmin">
+              <RouterLink class="nav-link fs-5" to="/admin/salas"> Salas </RouterLink>
+            </li>
+
             <li class="nav-item dropdown">
               <a
-                class="nav-link dropdown-toggle"
+                class="nav-link dropdown-toggle fs-5"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Académico
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('evaluaciones')">
+                    <i class="bi bi-journal-check me-2"></i>Evaluaciones
+                  </RouterLink>
+                </li>
+                <li>
+                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('libro-notas')">
+                    <i class="bi bi-table me-2"></i>Libro de Notas
+                  </RouterLink>
+                </li>
+                <li>
+                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('promocion')">
+                    <i class="bi bi-award me-2"></i>Promoción
+                  </RouterLink>
+                </li>
+                <li>
+                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('asistencia')">
+                    <i class="bi bi-calendar-check me-2"></i>Asistencia
+                  </RouterLink>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown" v-if="auth.isAdmin">
+              <a
+                class="nav-link dropdown-toggle fs-5"
                 href="#"
                 role="button"
                 data-bs-toggle="dropdown"
@@ -52,57 +101,20 @@
 
               <ul class="dropdown-menu">
                 <li>
-                  <RouterLink class="dropdown-item" to="/admin/usuarios">
+                  <RouterLink class="dropdown-item" fs-5 to="/admin/usuarios">
                     Usuarios administrativos
                   </RouterLink>
                 </li>
 
                 <li>
-                  <RouterLink class="dropdown-item" to="/admin/profesores">
+                  <RouterLink class="dropdown-item" fs-5 to="/admin/profesores">
                     Profesores
                   </RouterLink>
                 </li>
 
                 <li>
-                  <RouterLink class="dropdown-item" to="/admin/alumnos">
+                  <RouterLink class="dropdown-item" fs-5 to="/admin/alumnos">
                     Alumnos
-                  </RouterLink>
-                </li>
-              </ul>
-            </li>
-
-            <li class="nav-item">
-              <RouterLink class="nav-link" :to="cursosPath"> Cursos </RouterLink>
-            </li>
-
-            <li class="nav-item" v-if="auth.isAdmin">
-              <RouterLink class="nav-link" to="/admin/asignaturas"> Asignaturas </RouterLink>
-            </li>
-
-            <li class="nav-item dropdown">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                Académico
-              </a>
-              <ul class="dropdown-menu">
-                <li>
-                  <RouterLink class="dropdown-item" :to="academicoPath('evaluaciones')">
-                    <i class="bi bi-journal-check me-2"></i>Evaluaciones
-                  </RouterLink>
-                </li>
-                <li>
-                  <RouterLink class="dropdown-item" :to="academicoPath('libro-notas')">
-                    <i class="bi bi-table me-2"></i>Libro de Notas
-                  </RouterLink>
-                </li>
-                <li>
-                  <RouterLink class="dropdown-item" :to="academicoPath('promocion')">
-                    <i class="bi bi-award me-2"></i>Promoción
                   </RouterLink>
                 </li>
               </ul>
@@ -127,7 +139,7 @@
     </nav>
 
     <main class="container mt-5 py-4">
-      <RouterView />
+      <RouterView :key="$route.fullPath"/>
     </main>
   </div>
 </template>

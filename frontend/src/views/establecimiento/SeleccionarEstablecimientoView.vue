@@ -1,17 +1,12 @@
 <template>
-  <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light px-3">
-    <div class="card shadow-sm border-0 rounded-4" style="max-width: 480px; width: 100%">
+  <div class="min-vh-100 d-flex align-items-center justify-content-center px-3" style="background: #f0f2f5;">
+  <div class="card border-0 rounded-4" style="max-width: 480px; width: 100%; box-shadow: 0 25px 70px rgba(0,0,0,0.5);">
       <div class="card-body p-5">
-        <div class="text-center mb-4">
-          <div
-            class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-            style="width: 72px; height: 72px"
-          >
-            <i class="bi bi-building fs-1 text-primary"></i>
-          </div>
 
-          <h1 class="h3 fw-bold mb-2">Libro de Clases Digital</h1>
-          <p class="text-muted mb-0">Ingrese el RBD de su establecimiento para continuar</p>
+        <div class="text-center mb-4">
+        <img src="/iconos-plataforma-escolar/plataforma-escolar.png" alt="Plataforma Escolar" style="width: 80px; height: 80px; object-fit: contain;" class="mb-3" />
+        <h1 class="h3 fw-bold mb-2">Libro de Clases Digital</h1>
+        <p class="text-muted mb-0">Ingrese el RBD de su establecimiento para continuar</p>
         </div>
 
         <form @submit.prevent="buscarEstablecimiento">
@@ -22,7 +17,7 @@
               id="rbd"
               v-model="rbd"
               type="text"
-              class="form-control form-control-lg"
+              class="form-control form-control-lg rounded-pill px-4"
               placeholder="Ej: 25874-3"
               maxlength="10"
               autocomplete="off"
@@ -47,7 +42,7 @@
             {{ error }}
           </div>
 
-          <button type="submit" class="btn btn-primary btn-lg w-100" :disabled="loading">
+          <button type="submit" class="btn btn-lg w-100 rounded-pill fw-semibold" style="background: linear-gradient(135deg, #6f42c1, #4b0082); color: white; border: none; padding: 14px;" :disabled="loading">
             <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
 
             {{

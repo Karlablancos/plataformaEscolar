@@ -1,6 +1,7 @@
 package com.colegio.establecimiento.service;
 
 import com.colegio.establecimiento.dto.AsignaturaDTO;
+import com.colegio.establecimiento.dto.ComunaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
@@ -8,9 +9,11 @@ import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.dto.PeriodoAcademicoDTO;
+import com.colegio.establecimiento.dto.RegionDTO;
 import com.colegio.establecimiento.dto.SalaDTO;
 import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.model.Asignatura;
+import com.colegio.establecimiento.model.Comuna;
 import com.colegio.establecimiento.model.Curso;
 import com.colegio.establecimiento.model.CursoAsignatura;
 import com.colegio.establecimiento.model.Docente;
@@ -19,9 +22,11 @@ import com.colegio.establecimiento.model.Estudiante;
 import com.colegio.establecimiento.model.EstudianteCurso;
 import com.colegio.establecimiento.model.Horario;
 import com.colegio.establecimiento.model.PeriodoAcademico;
+import com.colegio.establecimiento.model.Region;
 import com.colegio.establecimiento.model.Sala;
 import com.colegio.establecimiento.model.TipoCalificacion;
 import com.colegio.establecimiento.repository.AsignaturaRepository;
+import com.colegio.establecimiento.repository.ComunaRepository;
 import com.colegio.establecimiento.repository.CursoAsignaturaRepository;
 import com.colegio.establecimiento.repository.CursoRepository;
 import com.colegio.establecimiento.repository.DocenteRepository;
@@ -30,6 +35,7 @@ import com.colegio.establecimiento.repository.EstudianteCursoRepository;
 import com.colegio.establecimiento.repository.EstudianteRepository;
 import com.colegio.establecimiento.repository.HorarioRepository;
 import com.colegio.establecimiento.repository.PeriodoAcademicoRepository;
+import com.colegio.establecimiento.repository.RegionRepository;
 import com.colegio.establecimiento.repository.SalaRepository;
 import com.colegio.establecimiento.repository.TipoCalificacionRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +61,8 @@ public class EstablecimientoService {
     private final CursoAsignaturaRepository cursoAsignaturaRepository;
     private final PeriodoAcademicoRepository periodoAcademicoRepository;
     private final TipoCalificacionRepository tipoCalificacionRepository;
+    private final RegionRepository regionRepository;
+    private final ComunaRepository comunaRepository;
     private final SalaRepository salaRepository;
     private final HorarioRepository horarioRepository;
 
@@ -436,15 +444,6 @@ public class EstablecimientoService {
                 .toList();
     }
 
-    public List<SalaDTO> listarSalas(Integer idEstablecimiento) {
-        validarEstablecimiento(idEstablecimiento);
-
-        return salaRepository.findByIdEstablecimientoAndEstadoOrderByNombreAsc(idEstablecimiento, "ACTIVO")
-                .stream()
-                .map(this::toSalaDTO)
-                .toList();
-    }
-
     public CursoAsignaturaDTO asignarAsignaturaCurso(
             Integer idEstablecimiento,
             Integer idCurso,
@@ -646,18 +645,6 @@ public class EstablecimientoService {
         return dto;
     }
 
-    private SalaDTO toSalaDTO(Sala sala) {
-        SalaDTO dto = new SalaDTO();
-        dto.setIdSala(sala.getIdSala());
-        dto.setNumero(sala.getNumero());
-        dto.setNombre(sala.getNombre());
-        dto.setCapacidad(sala.getCapacidad());
-        dto.setTipo(sala.getTipo());
-        dto.setPiso(sala.getPiso());
-        dto.setEstado(sala.getEstado());
-        return dto;
-    }
-
     private void validarDocente(Integer idEstablecimiento, Integer idDocente) {
         if (docenteRepository.findByIdDocenteAndIdEstablecimiento(idDocente, idEstablecimiento).isEmpty()) {
             throw new IllegalArgumentException("Docente no encontrado.");
@@ -754,6 +741,117 @@ public class EstablecimientoService {
         dto.setCodigo(a.getCodigo());
         dto.setIdTipoCalificacion(a.getIdTipoCalificacion());
         dto.setEstado(a.getEstado());
+        return dto;
+    }
+
+    public List<SalaDTO> listarSalas(Integer idEstablecimiento) {
+        validarEstablecimiento(idEstablecimiento);
+        return salaRepository.findByIdEstablecimientoAndEstadoOrderByNombreAsc(idEstablecimiento, "ACTIVO")
+                .stream()
+                .map(this::toSalaDTO)
+                .toList();
+    }
+
+    public SalaDTO crearSala(Integer idEstablecimiento, SalaDTO dto) {
+        validarEstablecimiento(idEstablecimiento);
+        validarDatosSala(dto);
+
+        Sala sala = new Sala();
+        sala.setIdEstablecimiento(idEstablecimiento);
+        sala.setNumero(dto.getNumero());
+        sala.setNombre(dto.getNombre().trim());
+        sala.setCapacidad(dto.getCapacidad());
+        sala.setTipo(dto.getTipo().trim().toUpperCase());
+        sala.setPiso(dto.getPiso());
+        sala.setEstado(normalizarEstado(dto.getEstado()));
+
+        return toSalaDTO(salaRepository.save(sala));
+    }
+
+    public Optional<SalaDTO> actualizarSala(Integer idEstablecimiento, Integer idSala, SalaDTO dto) {
+        return salaRepository.findByIdSalaAndIdEstablecimiento(idSala, idEstablecimiento)
+                .map(sala -> {
+                    validarDatosSala(dto);
+                    sala.setNumero(dto.getNumero());
+                    sala.setNombre(dto.getNombre().trim());
+                    sala.setCapacidad(dto.getCapacidad());
+                    sala.setTipo(dto.getTipo().trim().toUpperCase());
+                    sala.setPiso(dto.getPiso());
+                    sala.setEstado(normalizarEstado(dto.getEstado()));
+                    return toSalaDTO(salaRepository.save(sala));
+                });
+    }
+
+    public boolean eliminarSala(Integer idEstablecimiento, Integer idSala) {
+        Optional<Sala> sala = salaRepository.findByIdSalaAndIdEstablecimiento(idSala, idEstablecimiento);
+
+        if (sala.isEmpty()) {
+            return false;
+        }
+
+        try {
+            salaRepository.delete(sala.get());
+            return true;
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar la sala porque está asociada a horarios.");
+        }
+    }
+
+    private void validarDatosSala(SalaDTO dto) {
+        if (dto.getNombre() == null || dto.getNombre().isBlank()) {
+            throw new IllegalArgumentException("El nombre de la sala es obligatorio.");
+        }
+        if (dto.getCapacidad() == null || dto.getCapacidad() < 1) {
+            throw new IllegalArgumentException("La capacidad debe ser mayor a cero.");
+        }
+        if (dto.getTipo() == null || dto.getTipo().isBlank()) {
+            throw new IllegalArgumentException("El tipo de sala es obligatorio.");
+        }
+        if (dto.getPiso() == null) {
+            throw new IllegalArgumentException("El piso es obligatorio.");
+        }
+    }
+
+    private SalaDTO toSalaDTO(Sala s) {
+        SalaDTO dto = new SalaDTO();
+        dto.setIdSala(s.getIdSala());
+        dto.setIdEstablecimiento(s.getIdEstablecimiento());
+        dto.setNumero(s.getNumero());
+        dto.setNombre(s.getNombre());
+        dto.setCapacidad(s.getCapacidad());
+        dto.setTipo(s.getTipo());
+        dto.setPiso(s.getPiso());
+        dto.setEstado(s.getEstado());
+        return dto;
+    }
+
+    public List<RegionDTO> listarRegiones() {
+        List<Region> regiones = regionRepository.findAll();
+        List<Comuna> comunas = comunaRepository.findAll();
+        Map<Integer, List<ComunaDTO>> comunasPorRegion = comunas.stream()
+                .collect(Collectors.groupingBy(
+                        Comuna::getIdRegion,
+                        Collectors.mapping(this::toComunaDTO, Collectors.toList())
+                ));
+        return regiones.stream().map(r -> {
+            RegionDTO dto = new RegionDTO();
+            dto.setIdRegion(r.getIdRegion());
+            dto.setNombreRegion(r.getNombreRegion());
+            dto.setComunas(comunasPorRegion.getOrDefault(r.getIdRegion(), List.of()));
+            return dto;
+        }).toList();
+    }
+
+    public List<ComunaDTO> listarComunas() {
+        return comunaRepository.findAll().stream().map(this::toComunaDTO).toList();
+    }
+
+    private ComunaDTO toComunaDTO(Comuna c) {
+        ComunaDTO dto = new ComunaDTO();
+        dto.setIdComuna(c.getIdComuna());
+        dto.setNombreComuna(c.getNombreComuna());
+        dto.setIdRegion(c.getIdRegion());
         return dto;
     }
 }

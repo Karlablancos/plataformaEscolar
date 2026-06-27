@@ -9,37 +9,45 @@ const resolveEstablecimientoId = () => {
   )
 }
 
+const mapEstadoFromApi = (estado) => {
+  if (!estado) return 'ACTIVO'
+  const normalizado = String(estado).trim().toUpperCase()
+  return normalizado.startsWith('INACTIV') ? 'INACTIVO' : 'ACTIVO'
+}
+
 export const mapSalaFromApi = (dto) => ({
   id: dto.idSala,
   id_sala: dto.idSala,
+  id_establecimiento: Number(dto.idEstablecimiento),
+  establecimientoId: Number(dto.idEstablecimiento),
   numero: dto.numero ?? null,
   nombre: dto.nombre?.trim() ?? '',
-  capacidad: dto.capacidad ?? null,
+  capacidad: dto.capacidad,
   tipo: dto.tipo?.trim() ?? '',
-  piso: dto.piso ?? null,
-  estado: dto.estado?.trim() ?? 'ACTIVO',
+  piso: dto.piso,
+  estado: mapEstadoFromApi(dto.estado),
 })
 
-const fetchWithRetry = async (fn, retries = 3, delayMs = 1500) => {
-  let lastError
+const toSalaPayload = (data) => ({
+  numero: data.numero ? Number(data.numero) : null,
+  nombre: data.nombre?.trim() ?? '',
+  capacidad: Number(data.capacidad),
+  tipo: data.tipo?.trim().toUpperCase() ?? '',
+  piso: Number(data.piso),
+  estado: data.estado ?? 'ACTIVO',
+})
 
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      return await fn()
-    } catch (error) {
-      lastError = error
-      const status = error?.response?.status
-      const esReintentable = !status || status >= 500
+const getSalaId = (sala) => sala.id_sala ?? sala.id
 
-      if (!esReintentable || attempt === retries - 1) {
-        throw error
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, delayMs))
-    }
-  }
-
-  throw lastError
+const salasDelEstablecimientoActivo = (salas) => {
+  const establecimientoId = resolveEstablecimientoId()
+  return salas
+    .filter((sala) => Number(sala.id_establecimiento) === Number(establecimientoId))
+    .map((sala) => ({
+      ...sala,
+      id: getSalaId(sala),
+      id_sala: getSalaId(sala),
+    }))
 }
 
 export const useSalasStore = defineStore('salas', {
@@ -50,7 +58,17 @@ export const useSalasStore = defineStore('salas', {
   }),
 
   getters: {
-    salasActivas: (state) => state.salas,
+    salasFiltradasNormalizadas: (state) => salasDelEstablecimientoActivo(state.salas),
+
+    salasActivas: (state) =>
+      salasDelEstablecimientoActivo(state.salas).filter((sala) => sala.estado === 'ACTIVO'),
+
+    getSalaById: (state) => {
+      return (id) => {
+        const salaId = Number(id)
+        return state.salas.find((sala) => getSalaId(sala) === salaId)
+      }
+    },
   },
 
   actions: {
@@ -62,17 +80,100 @@ export const useSalasStore = defineStore('salas', {
       this.error = null
 
       try {
-        const { data } = await fetchWithRetry(() =>
-          api.get(`/establecimiento/${idEstablecimiento}/salas`),
-        )
+        const { data } = await api.get(`/establecimiento/${idEstablecimiento}/salas`)
         this.salas = data.map(mapSalaFromApi)
         return this.salas
+      } catch (error) {
+        this.error = error
+        console.warn('cargarSalas: error al cargar desde API', error?.message)
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    async agregarSala(data) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      this.error = null
+
+      try {
+        const { data: creada } = await api.post(
+          `/establecimiento/${idEstablecimiento}/salas`,
+          toSalaPayload(data),
+        )
+        const sala = mapSalaFromApi(creada)
+        this.salas.push(sala)
+        return sala
       } catch (error) {
         this.error = error
         throw error
       } finally {
         this.cargando = false
       }
+    },
+
+    async actualizarSala(id, data) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const salaId = Number(id)
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      this.error = null
+
+      try {
+        const { data: actualizada } = await api.put(
+          `/establecimiento/${idEstablecimiento}/salas/${salaId}`,
+          toSalaPayload(data),
+        )
+
+        const sala = mapSalaFromApi(actualizada)
+        const index = this.salas.findIndex((item) => getSalaId(item) === salaId)
+
+        if (index !== -1) {
+          this.salas[index] = sala
+        }
+
+        return sala
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    async eliminarSala(id) {
+      const idEstablecimiento = resolveEstablecimientoId()
+      const salaId = Number(id)
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      this.cargando = true
+      this.error = null
+
+      try {
+        await api.delete(`/establecimiento/${idEstablecimiento}/salas/${salaId}`)
+        this.salas = this.salas.filter((sala) => getSalaId(sala) !== salaId)
+      } catch (error) {
+        this.error = error
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    resetData() {
+      this.salas = []
     },
   },
 })

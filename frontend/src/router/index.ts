@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import LoginView from '../views/LoginView.vue'
-import DashboardView from '../views/DashboardView.vue'
+import LoginView from '../views/usuarios/LoginView.vue'
+import DashboardAdminView from '../views/usuarios/DashboardAdminView.vue'
 
 import SeleccionarEstablecimientoView from '../views/establecimiento/SeleccionarEstablecimientoView.vue'
 import EstablecimientoView from '../views/establecimiento/EstablecimientoView.vue'
@@ -22,6 +22,8 @@ import AsignaturasView from '../views/asignaturas/AsignaturasView.vue'
 import EvaluacionesView from '../views/academico/EvaluacionesView.vue'
 import LibroNotasView from '../views/academico/LibroNotasView.vue'
 import PromocionView from '../views/academico/PromocionView.vue'
+import AsistenciaView from '../views/asistencia/AsistenciaView.vue'
+import SalasView from '../views/salas/SalasView.vue'
 
 const routes = [
   {
@@ -48,109 +50,128 @@ const routes = [
     component: () => import('@/components/AppLayout.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN', 'UTP', 'DIRECTOR'],
+      roles: ['ADMINISTRADOR'],
     },
     children: [
       {
         path: '',
-        redirect: '/admin/dashboard',
+        redirect: '/admin/dashboard-admin',
       },
       {
-        path: 'dashboard',
-        name: 'dashboard',
-        component: DashboardView,
+        path: 'dashboard-admin',
+        name: 'dashboard-admin',
+        component: DashboardAdminView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'establecimiento',
         name: 'establecimiento',
         component: EstablecimientoView,
+        // solo ADMINISTRADOR — hereda roles del padre
       },
       {
         path: 'usuarios',
         name: 'usuarios',
         component: () => import('@/views/usuarios/UsuariosView.vue'),
+        // solo ADMINISTRADOR — hereda roles del padre
       },
       {
         path: 'alumnos',
         name: 'alumnos',
         component: AlumnosListView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'alumnos/nuevo',
         name: 'alumnos-nuevo',
         component: AlumnoCreateView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'alumnos/:id',
         name: 'alumnos-detalle',
         component: AlumnoDetailView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'alumnos/:id/editar',
         name: 'alumnos-editar',
         component: AlumnoDetailView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'cursos',
         name: 'cursos',
         component: CursosView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'cursos/:id',
         name: 'curso-detalle',
         component: CursoDetalleView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'profesores',
         name: 'profesores',
         component: ProfesoresView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'profesores/nuevo',
         name: 'profesores-nuevo',
         component: ProfesorFormView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'profesores/:id',
         name: 'profesores-detalle',
         component: ProfesorDetailView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'profesores/:id/editar',
         name: 'profesores-editar',
         component: ProfesorFormView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'asignaturas',
         name: 'asignaturas',
         component: AsignaturasView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'academico/evaluaciones',
         name: 'evaluaciones',
         component: EvaluacionesView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'academico/libro-notas',
         name: 'libro-notas',
         component: LibroNotasView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'academico/promocion',
         name: 'promocion',
         component: PromocionView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
+      },
+      {
+        path: 'academico/asistencia',
+        name: 'asistencia',
+        component: AsistenciaView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
+      },
+      {
+        path: 'salas',
+        name: 'salas',
+        component: SalasView,
+        // solo ADMINISTRADOR — hereda roles del padre
       },
     ],
-  },
-
-  {
-    path: '/sostenedor/dashboard',
-    name: 'sostenedor-dashboard',
-    component: () => import('@/views/sostenedor/SostenedorDashboardView.vue'),
-    meta: {
-      requiresAuth: true,
-      roles: ['SOSTENEDOR'],
-    },
   },
 
   {
@@ -158,17 +179,17 @@ const routes = [
     component: () => import('@/components/AppLayout.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['PROFESOR'],
+      roles: ['DOCENTE'],
     },
     children: [
       {
         path: '',
-        redirect: '/profesor/dashboard',
+        redirect: '/profesor/dashboard-docente',
       },
       {
-        path: 'dashboard',
+        path: 'dashboard-docente',
         name: 'profesor-dashboard',
-        component: DashboardView,
+        component: DashboardAdminView,
       },
       {
         path: 'cursos',
@@ -195,6 +216,11 @@ const routes = [
         name: 'profesor-promocion',
         component: PromocionView,
       },
+      {
+        path: 'academico/asistencia',
+        name: 'profesor-asistencia',
+        component: AsistenciaView,
+      },
     ],
   },
 
@@ -210,8 +236,10 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
+  console.log('GUARD:', to.path, 'meta:', JSON.stringify(to.meta))
   const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || 'null')
+  console.log('USER ROL:', user?.rol)
   const establecimiento = JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')
 
   if (to.meta.requiresEstablecimiento && !establecimiento) {
@@ -229,17 +257,24 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.publicOnly && token && user) {
-    if (user.rol === 'PROFESOR') return '/profesor/dashboard'
-    if (user.rol === 'SOSTENEDOR') return '/sostenedor/dashboard'
-    return '/admin/dashboard'
+    if (to.path.startsWith('/admin') || to.path.startsWith('/profesor')) return true
+    if (user.rol === 'DOCENTE') return '/profesor/dashboard-docente'
+    if (user.rol === 'ADMINISTRADOR') return '/admin/dashboard-admin'
+    return '/admin/dashboard-admin'
   }
 
-  const allowedRoles = to.meta.roles as unknown as string[] | undefined
+  if (to.meta.requiresAuth) {
+    // Usa la ruta más específica (hijo sobre padre) para resolver roles
+    const allowedRoles = [...to.matched]
+      .reverse()
+      .map((r) => r.meta.roles)
+      .find((roles) => roles) as string[] | undefined
 
-  if (allowedRoles && user && !allowedRoles.includes(user.rol)) {
-    if (user.rol === 'PROFESOR') return '/profesor/dashboard'
-    if (user.rol === 'SOSTENEDOR') return '/sostenedor/dashboard'
-    return '/admin/dashboard'
+    if (allowedRoles && user && !allowedRoles.includes(user.rol)) {
+      if (user.rol === 'DOCENTE') return '/profesor/dashboard-docente'
+      if (user.rol === 'DIRECTOR') return '/admin/dashboard-admin'
+      return '/admin/dashboard-admin'
+    }
   }
 })
 

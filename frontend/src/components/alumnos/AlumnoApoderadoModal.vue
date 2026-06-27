@@ -1,6 +1,13 @@
 <script setup>
-import { reactive } from 'vue'
-import { comunasMock } from '../../data/comunasMock'
+import { reactive, ref, onMounted } from 'vue'
+import api from '@/api/axios'
+
+const comunas = ref([])
+
+onMounted(async () => {
+  const { data } = await api.get('/establecimiento/comunas')
+  comunas.value = data
+})
 
 const emit = defineEmits(['guardar'])
 
@@ -174,8 +181,8 @@ function guardar() {
                 <select v-model="form.comuna" class="form-select">
                   <option value="">Seleccionar comuna</option>
 
-                  <option v-for="comuna in comunasMock" :key="comuna" :value="comuna">
-                    {{ comuna }}
+                  <option v-for="comuna in comunas" :key="comuna.idComuna" :value="comuna.idComuna">
+                    {{ comuna.nombreComuna }}
                   </option>
                 </select>
               </div>

@@ -70,7 +70,8 @@ public class AuthController {
                                     rol = normalizarRol(rolBD);
                                 } else {
                                     Integer idRol = usuario.get("idRol") != null
-                                            ? ((Number) usuario.get("idRol")).intValue() : 1;
+                                            ? ((Number) usuario.get("idRol")).intValue()
+                                            : 1;
                                     rol = normalizarRolPorId(idRol);
                                 }
                                 // Usar el id_establecimiento del usuario autenticado
@@ -95,23 +96,15 @@ public class AuthController {
     }
 
     private String normalizarRol(String nombreRol) {
-        if (nombreRol == null) return "ADMIN";
-        return switch (nombreRol.toUpperCase()) {
-            case "ADMINISTRADOR" -> "ADMIN";
-            case "DOCENTE"       -> "PROFESOR";
-            case "SOSTENEDOR"    -> "SOSTENEDOR";
-            default              -> nombreRol.toUpperCase();
-        };
+        if (nombreRol == null)
+            return "ADMINISTRADOR";
+        return nombreRol.toUpperCase();
     }
 
-    // Fallback cuando findNombreRolById devuelve null — mapea directamente por id_rol
+    // Fallback cuando findNombreRolById devuelve null — mapea directamente por
+    // id_rol
     private String normalizarRolPorId(Integer idRol) {
-        return switch (idRol) {
-            case 1 -> "ADMIN";
-            case 2 -> "PROFESOR";
-            case 5 -> "SOSTENEDOR";
-            default -> "APODERADO";
-        };
+        return "ADMINISTRADOR"; // fallback genérico si no hay nombre
     }
 
     public Mono<ResponseEntity<LoginResponse>> loginFallback(LoginRequest request, Throwable t) {

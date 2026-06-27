@@ -131,23 +131,31 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useAcademicStore } from '@/stores/academicStore'
-import { comunasMock } from '@/data'
+import api from '@/api/axios'
 
 const route = useRoute()
 const academicStore = useAcademicStore()
 
 const tabActiva = ref('datos')
+const comunas = ref([])
+
+onMounted(async () => {
+  await academicStore.cargarDocentes().catch(() => {})
+
+  const { data } = await api.get('/establecimiento/comunas')
+  comunas.value = data
+})
 
 const profesorId = computed(() => Number(route.params.id))
 
 const profesor = computed(() => academicStore.getProfesorById(profesorId.value))
 
 const comunaNombre = computed(() => {
-  const comuna = comunasMock.find((item) => item.id === profesor.value?.id_comuna)
-  return comuna?.nombre || 'No registrada'
+  const comuna = comunas.value.find((item) => item.idComuna === profesor.value?.id_comuna)
+  return comuna?.nombreComuna || 'No registrada'
 })
 
 const categoriaSnedNombre = computed(() => {

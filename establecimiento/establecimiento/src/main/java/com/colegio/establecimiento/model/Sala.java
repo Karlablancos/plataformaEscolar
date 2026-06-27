@@ -13,6 +13,9 @@ public class Sala {
     @Column(name = "id_sala")
     private Integer idSala;
 
+    @Column(name = "id_establecimiento", nullable = false)
+    private Integer idEstablecimiento;
+
     @Column(name = "numero")
     private Integer numero;
 
@@ -30,7 +33,4 @@ public class Sala {
 
     @Column(name = "estado", nullable = false)
     private String estado;
-
-    @Column(name = "id_establecimiento", nullable = false)
-    private Integer idEstablecimiento;
 }

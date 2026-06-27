@@ -1,8 +1,8 @@
 <script setup>
-import { computed, reactive, onMounted } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAcademicStore } from '@/stores/academicStore'
-import { comunasMock } from '@/data'
+import api from '@/api/axios'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,10 +11,10 @@ const academicStore = useAcademicStore()
 const profesorId = computed(() => Number(route.params.id))
 const esEdicion = computed(() => Boolean(route.params.id))
 
-const comunas = computed(() => comunasMock)
+const comunas = ref([])
 const categoriasSned = computed(() => academicStore.categoriasSned)
 
-const form = reactive({
+const formInicial = {
   id_usuario: null,
   id_categoria_sned: null,
   anio_evaluacion_sned: new Date().getFullYear(),
@@ -34,20 +34,39 @@ const form = reactive({
 
   fecha_contratacion: '',
   estado: 'Activo',
-})
+}
 
-onMounted(() => {
-  if (!esEdicion.value) return
+const form = reactive({ ...formInicial })
 
-  const profesor = academicStore.getProfesorById(profesorId.value)
+watch(
+  () => route.path,
+  async () => {
+    try {
+      const { data } = await api.get('/establecimiento/comunas')
+      comunas.value = Array.isArray(data) ? data : []
+    } catch (error) {
+      console.error('Error al cargar comunas:', error)
+    }
 
-  if (!profesor) {
-    router.push('/admin/profesores')
-    return
-  }
+    if (esEdicion.value) {
+      await academicStore.cargarDocentes().catch(() => {})
+    }
 
-  Object.assign(form, profesor)
-})
+    Object.assign(form, formInicial)
+
+    if (!esEdicion.value) return
+
+    const profesor = academicStore.getProfesorById(profesorId.value)
+
+    if (!profesor) {
+      router.push('/admin/profesores')
+      return
+    }
+
+    Object.assign(form, profesor)
+  },
+  { immediate: true },
+)
 
 const guardar = () => {
   if (esEdicion.value) {
@@ -136,8 +155,8 @@ const guardar = () => {
             <label class="form-label">Comuna</label>
             <select v-model.number="form.id_comuna" class="form-select">
               <option :value="null">Seleccionar comuna</option>
-              <option v-for="comuna in comunas" :key="comuna.id" :value="comuna.id">
-                {{ comuna.nombre }}
+              <option v-for="comuna in comunas" :key="comuna.idComuna" :value="comuna.idComuna">
+                {{ comuna.nombreComuna }}
               </option>
             </select>
           </div>
