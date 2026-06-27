@@ -33,7 +33,7 @@
 
             <div class="summary-item">
               <span>Modo aula</span>
-              <strong>{{ form.modo_aula || 'No informado' }}</strong>
+              <strong>{{ etiquetaModoAulaResumen }}</strong>
             </div>
 
             <div class="summary-item">
@@ -373,10 +373,19 @@ const form = reactive({
 })
 
 const etiquetaModoAula = computed(() => {
-  const modo = String(form.modo_aula || 'SEMESTRAL').toUpperCase()
+  const modo = String(form.modo_aula || 'NORMAL').toUpperCase()
   if (modo === 'TRIMESTRAL') return 'trimestral (3 periodos)'
-  if (modo === 'ANUAL' || modo === 'NORMAL') return 'anual (1 periodo)'
+  if (modo === 'ANUAL' || modo === 'NORMAL') return 'normal / anual (1 periodo)'
   return 'semestral (2 periodos)'
+})
+
+const etiquetaModoAulaResumen = computed(() => {
+  const modo = String(form.modo_aula || 'NORMAL').toUpperCase()
+  if (modo === 'NORMAL') return 'Normal'
+  if (modo === 'SEMESTRAL') return 'Semestral'
+  if (modo === 'TRIMESTRAL') return 'Trimestral'
+  if (modo === 'ANUAL') return 'Anual'
+  return modo
 })
 
 const columnaPeriodoClass = computed(() => {
@@ -398,6 +407,7 @@ onMounted(async () => {
   }
 
   Object.assign(form, getEstablecimiento())
+  form.modo_aula = String(form.modo_aula || form.modoAula || 'NORMAL').toUpperCase()
   await cargarPeriodosAnio()
 })
 

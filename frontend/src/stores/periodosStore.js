@@ -40,7 +40,7 @@ export const usePeriodosStore = defineStore('periodos', {
 
   getters: {
     periodosActivos: (state) => {
-      const modoAula = useEstablecimientoStore().establecimientoActivo?.modo_aula ?? 'SEMESTRAL'
+      const modoAula = useEstablecimientoStore().establecimientoActivo?.modo_aula ?? 'NORMAL'
 
       const activos = state.periodos.filter((periodo) => {
         const estado = String(periodo.estado || '').toUpperCase()

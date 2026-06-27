@@ -1,5 +1,5 @@
 export const plantillasPorModoAula = (modo) => {
-  const normalizado = String(modo || 'SEMESTRAL').trim().toUpperCase()
+  const normalizado = String(modo || 'NORMAL').trim().toUpperCase()
 
   if (normalizado === 'TRIMESTRAL') {
     return [
@@ -44,7 +44,7 @@ export const calcularEstadoPeriodo = (fechaInicio, fechaTermino) => {
 
 export const fechasDefectoPeriodo = (anio, modo, index) => {
   const year = Number(anio)
-  const normalizado = String(modo || 'SEMESTRAL').trim().toUpperCase()
+  const normalizado = String(modo || 'NORMAL').trim().toUpperCase()
 
   if (normalizado === 'TRIMESTRAL') {
     if (index === 0) return { fecha_inicio: `${year}-03-01`, fecha_termino: `${year}-05-31` }

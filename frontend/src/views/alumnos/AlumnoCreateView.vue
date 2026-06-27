@@ -2,12 +2,15 @@
 import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAcademicStore } from '../../stores/academicStore'
+import { useCursosStore } from '@/stores/cursosStore'
 import api from '@/api/axios'
+import { extractApiError } from '@/stores/shared/apiError'
 
 const router = useRouter()
 const academic = useAcademicStore()
+const cursosStore = useCursosStore()
 
-const cursos = computed(() => academic.cursosFiltrados)
+const cursos = computed(() => cursosStore.cursosFiltradosNormalizados)
 const tiposNee = computed(() => academic.tiposNee)
 
 const regiones = ref([])
@@ -24,8 +27,11 @@ watch(regionId, () => {
 })
 
 onMounted(async () => {
-  const { data } = await api.get('/establecimiento/regiones')
-  regiones.value = data
+  const [regionesRes] = await Promise.all([
+    api.get('/establecimiento/regiones'),
+    cursosStore.cargarCursos().catch(() => {}),
+  ])
+  regiones.value = regionesRes.data
 })
 
 const form = reactive({
@@ -78,8 +84,7 @@ const guardarAlumno = async () => {
   } catch (error) {
     console.error('Error al crear alumno:', error)
     alert(
-      error?.response?.data?.message ||
-        'No se pudo guardar el alumno. Verifica los datos e intenta nuevamente.',
+      extractApiError(error, 'No se pudo guardar el alumno. Verifica los datos e intenta nuevamente.'),
     )
   } finally {
     guardando.value = false
