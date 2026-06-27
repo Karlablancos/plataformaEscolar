@@ -7,6 +7,8 @@ import { useAlumnosStore } from './alumnosStore'
 import { useCursosStore } from './cursosStore'
 import { useDocentesStore } from './docentesStore'
 import { useAsignaturasStore } from './asignaturasStore'
+import { usePeriodosStore } from './periodosStore'
+import { useSalasStore } from './salasStore'
 
 export const useAcademicStore = defineStore('academic', {
   getters: {
@@ -48,6 +50,11 @@ export const useAcademicStore = defineStore('academic', {
 
     tiposCalificacion: () => useAsignaturasStore().tiposCalificacion,
     tiposCalificacionActivos: () => useAsignaturasStore().tiposCalificacionActivos,
+
+    periodos: () => usePeriodosStore().periodos,
+    periodosActivos: () => usePeriodosStore().periodosActivos,
+
+    salasActivas: () => useSalasStore().salasActivas,
 
     docenteAsignaturaCurso: () => {
       const store = useAsignaturasStore()
@@ -130,6 +137,18 @@ export const useAcademicStore = defineStore('academic', {
 
     async cargarDocentes() {
       return useDocentesStore().cargarDocentes()
+    },
+
+    async cargarPeriodos(anio) {
+      return usePeriodosStore().cargarPeriodos(anio)
+    },
+
+    async crearPeriodo(data) {
+      return usePeriodosStore().crearPeriodo(data)
+    },
+
+    async actualizarPeriodo(id, data) {
+      return usePeriodosStore().actualizarPeriodo(id, data)
     },
 
     asignarAlumnoACurso(cursoId, alumnoId) {
@@ -215,6 +234,10 @@ export const useAcademicStore = defineStore('academic', {
       return useAsignaturasStore().sincronizarAsignaturasCurso(cursoId)
     },
 
+    async cargarSalas() {
+      return useSalasStore().cargarSalas()
+    },
+
     agregarAsignaturaACurso(cursoId, asignaturaId, docenteId, data = {}) {
       return useAsignaturasStore().agregarAsignaturaACurso(
         cursoId,
@@ -224,8 +247,8 @@ export const useAcademicStore = defineStore('academic', {
       )
     },
 
-    quitarAsignaturaDeCurso(cursoId, asignaturaId) {
-      return useAsignaturasStore().quitarAsignaturaDeCurso(cursoId, asignaturaId)
+    quitarAsignaturaDeCurso(cursoId, asignaturaId, idPeriodo) {
+      return useAsignaturasStore().quitarAsignaturaDeCurso(cursoId, asignaturaId, idPeriodo)
     },
 
     cambiarDocenteAsignatura(cursoId, asignaturaId, docenteId) {

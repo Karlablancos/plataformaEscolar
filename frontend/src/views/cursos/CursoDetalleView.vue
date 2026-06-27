@@ -1,12 +1,22 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAcademicStore } from '@/stores/academicStore'
 import { useCursosStore } from '@/stores/cursosStore'
+import { useSalasStore } from '@/stores/salasStore'
+import { useToastStore } from '@/stores/toastStore'
 
 const route = useRoute()
 const academic = useAcademicStore()
 const cursosStore = useCursosStore()
+const salasStore = useSalasStore()
+const toastStore = useToastStore()
+const { salasActivas: salasDisponibles, cargando: cargandoSalas } = storeToRefs(salasStore)
+
+const cursosListPath = computed(() =>
+  route.path.startsWith('/profesor') ? '/profesor/cursos' : '/admin/cursos',
+)
 
 const cargando = ref(false)
 const errorOperacion = ref('')
@@ -25,6 +35,7 @@ onMounted(async () => {
       academic.cargarAlumnos(),
       academic.cargarAsignaturas(),
       academic.cargarDocentes(),
+      academic.cargarPeriodos(academic.anioActivo),
     ])
     await academic.sincronizarAlumnosCurso(cursoId.value)
     await academic.sincronizarAsignaturasCurso(cursoId.value)
@@ -36,14 +47,64 @@ onMounted(async () => {
   }
 })
 
+const cargarSalasSiFaltan = async () => {
+  if (salasDisponibles.value.length > 0 || cargandoSalas.value) return
+
+  errorAsignaturas.value = ''
+
+  try {
+    await salasStore.cargarSalas()
+  } catch (error) {
+    errorAsignaturas.value =
+      error?.response?.data?.mensaje ||
+      error?.message ||
+      'No se pudieron cargar las salas del establecimiento.'
+  }
+}
+
 const tabActiva = ref('estudiantes')
 
 const mostrarBuscadorEstudiante = ref(false)
 const busquedaAlumno = ref('')
 
 const profesorJefeId = ref('')
+const periodoSeleccionadoId = ref('')
 const asignaturaSeleccionadaId = ref('')
 const docenteSeleccionadoId = ref('')
+const salaSeleccionadaId = ref('')
+const horasSemanalesSeleccionadas = ref('')
+const opcionesHorasSemanales = [1, 2, 3, 4, 5, 6]
+
+watch(tabActiva, (tab) => {
+  if (tab === 'asignaturas') {
+    cargarSalasSiFaltan()
+  }
+})
+
+watch(periodoSeleccionadoId, (periodoId) => {
+  asignaturaSeleccionadaId.value = ''
+  docenteSeleccionadoId.value = ''
+  salaSeleccionadaId.value = ''
+  horasSemanalesSeleccionadas.value = ''
+
+  if (periodoId && tabActiva.value === 'asignaturas') {
+    cargarSalasSiFaltan()
+  }
+})
+
+const periodosDisponibles = computed(() => academic.periodosActivos)
+
+watch(periodosDisponibles, (lista) => {
+  if (!periodoSeleccionadoId.value) return
+
+  const periodoValido = lista.some(
+    (periodo) => Number(periodo.id) === Number(periodoSeleccionadoId.value),
+  )
+
+  if (!periodoValido) {
+    periodoSeleccionadoId.value = ''
+  }
+})
 
 const cursoId = computed(() => Number(route.params.id))
 const curso = computed(() => academic.getCursoById(cursoId.value))
@@ -118,9 +179,35 @@ const profesorJefe = computed(() => {
 
 const asignaturasCurso = computed(() => academic.getAsignaturasCurso(cursoId.value))
 
+const periodoSeleccionado = computed(() => {
+  const periodoId = Number(periodoSeleccionadoId.value)
+  if (!periodoId) return null
+
+  return periodosDisponibles.value.find((periodo) => Number(periodo.id) === periodoId) ?? null
+})
+
+const tituloSeccionAsignaturas = computed(() => {
+  if (!periodoSeleccionado.value) return 'Asignaturas del curso'
+  return `Asignaturas del curso para ${periodoSeleccionado.value.nombre}`
+})
+
+const asignaturasCursoEnPeriodo = computed(() => {
+  if (!periodoSeleccionadoId.value) return []
+
+  const periodoId = Number(periodoSeleccionadoId.value)
+  return asignaturasCurso.value.filter(
+    (item) => Number(item.id_periodo ?? item.periodoId) === periodoId,
+  )
+})
+
 const asignaturasDisponibles = computed(() => {
+  if (!periodoSeleccionadoId.value) return []
+
+  const periodoId = Number(periodoSeleccionadoId.value)
   const idsAsignadas = new Set(
-    asignaturasCurso.value.map((item) => item.asignaturaId ?? item.id_asignatura),
+    asignaturasCurso.value
+      .filter((item) => Number(item.id_periodo ?? item.periodoId) === periodoId)
+      .map((item) => item.asignaturaId ?? item.id_asignatura),
   )
 
   return academic.asignaturasFiltradas.filter(
@@ -174,8 +261,15 @@ const guardarProfesorJefe = async () => {
 }
 
 const agregarAsignatura = async () => {
-  if (!asignaturaSeleccionadaId.value || !docenteSeleccionadoId.value) {
-    errorAsignaturas.value = 'Debes seleccionar asignatura y docente responsable.'
+  if (
+    !periodoSeleccionadoId.value ||
+    !asignaturaSeleccionadaId.value ||
+    !docenteSeleccionadoId.value ||
+    !salaSeleccionadaId.value ||
+    !horasSemanalesSeleccionadas.value
+  ) {
+    errorAsignaturas.value =
+      'Debes seleccionar un periodo arriba y completar asignatura, docente, sala y horas semanales.'
     return
   }
 
@@ -187,10 +281,18 @@ const agregarAsignatura = async () => {
       cursoId.value,
       asignaturaSeleccionadaId.value,
       docenteSeleccionadoId.value,
+      {
+        id_periodo: Number(periodoSeleccionadoId.value),
+        horas_semanales: Number(horasSemanalesSeleccionadas.value),
+        id_sala: Number(salaSeleccionadaId.value),
+      },
     )
 
     asignaturaSeleccionadaId.value = ''
     docenteSeleccionadoId.value = ''
+    salaSeleccionadaId.value = ''
+    horasSemanalesSeleccionadas.value = ''
+    toastStore.show('Asignatura creada exitosamente')
   } catch (error) {
     errorAsignaturas.value =
       error?.response?.data?.mensaje ||
@@ -201,12 +303,16 @@ const agregarAsignatura = async () => {
   }
 }
 
-const quitarAsignatura = async (asignaturaId) => {
+const quitarAsignatura = async (item) => {
   errorAsignaturas.value = ''
   guardandoAsignatura.value = true
 
   try {
-    await academic.quitarAsignaturaDeCurso(cursoId.value, asignaturaId)
+    await academic.quitarAsignaturaDeCurso(
+      cursoId.value,
+      item.asignaturaId ?? item.id_asignatura,
+      item.id_periodo ?? item.periodoId,
+    )
   } catch (error) {
     errorAsignaturas.value =
       error?.response?.data?.mensaje ||
@@ -220,7 +326,7 @@ const quitarAsignatura = async (asignaturaId) => {
 
 <template>
   <div v-if="curso">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
       <div>
         <h1 class="h3 mb-1">Configurar curso {{ nombreCurso }}</h1>
         <p class="text-muted mb-0">
@@ -228,9 +334,25 @@ const quitarAsignatura = async (asignaturaId) => {
         </p>
       </div>
 
-      <RouterLink to="/admin/cursos" class="btn btn-outline-secondary btn-rounded">
-        ← Volver
-      </RouterLink>
+      <div class="text-end">
+        <RouterLink :to="cursosListPath" class="btn btn-outline-secondary btn-rounded">
+          ← Volver
+        </RouterLink>
+
+        <div v-if="tabActiva === 'asignaturas'" class="mt-3" style="min-width: 220px">
+          <label class="form-label text-start d-block mb-1">Periodo académico</label>
+          <select v-model="periodoSeleccionadoId" class="form-select">
+            <option value="">Seleccionar periodo</option>
+            <option
+              v-for="periodo in periodosDisponibles"
+              :key="periodo.id"
+              :value="periodo.id"
+            >
+              {{ periodo.nombre }}
+            </option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <ul class="nav nav-tabs mb-4">
@@ -433,87 +555,124 @@ const quitarAsignatura = async (asignaturaId) => {
     <div v-if="tabActiva === 'asignaturas'" class="card curso-tab-card">
       <div class="card-body">
         <div v-if="errorAsignaturas" class="alert alert-danger">{{ errorAsignaturas }}</div>
-        <h2 class="h5 mb-3">Asignaturas del curso</h2>
+        <h2 class="h5 mb-3">{{ tituloSeccionAsignaturas }}</h2>
 
-        <div class="row g-3 align-items-end mb-4">
-          <div class="col-md-5">
-            <label class="form-label">Asignatura</label>
-            <select v-model="asignaturaSeleccionadaId" class="form-select">
-              <option value="">Seleccionar asignatura</option>
-              <option
-                v-for="asignatura in asignaturasDisponibles"
-                :key="asignatura.id"
-                :value="asignatura.id"
-              >
-                {{ asignatura.nombre }}
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-5">
-            <label class="form-label">Docente responsable</label>
-            <select v-model="docenteSeleccionadoId" class="form-select">
-              <option value="">Seleccionar docente</option>
-              <option
-                v-for="docente in academic.profesoresFiltrados"
-                :key="docente.id_docente"
-                :value="docente.id_docente"
-              >
-                {{ docente.nombres }} {{ docente.apellido_paterno }}
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-2">
-            <button
-              class="btn btn-success btn-rounded w-100"
-              :disabled="guardandoAsignatura"
-              @click="agregarAsignatura"
-            >
-              {{ guardandoAsignatura ? 'Agregando...' : 'Agregar' }}
-            </button>
-          </div>
+        <div v-if="periodosDisponibles.length === 0" class="alert alert-warning">
+          No hay periodos académicos configurados para el año {{ academic.anioActivo }}.
         </div>
 
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Asignatura</th>
-                <th>Docente responsable</th>
-                <th>Estado</th>
-                <th class="text-end">Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr v-for="item in asignaturasCurso" :key="item.id">
-                <td>{{ item.asignaturaNombre }}</td>
-                <td>{{ item.docenteNombre }}</td>
-                <td>
-                  <span class="badge text-bg-success">
-                    {{ item.estado }}
-                  </span>
-                </td>
-                <td class="text-end">
-                  <button
-                    class="btn btn-outline-danger btn-sm btn-rounded"
-                    :disabled="guardandoAsignatura"
-                    @click="quitarAsignatura(item.asignaturaId ?? item.id_asignatura)"
-                  >
-                    Quitar
-                  </button>
-                </td>
-              </tr>
-
-              <tr v-if="asignaturasCurso.length === 0">
-                <td colspan="4" class="text-center text-muted py-4">
-                  Este curso aún no tiene asignaturas configuradas.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-else-if="!periodoSeleccionadoId" class="alert alert-info">
+          Selecciona un periodo académico arriba para ver y agregar asignaturas.
         </div>
+
+        <template v-else>
+          <div class="row g-3 align-items-end mb-4">
+            <div class="col-md-3">
+              <label class="form-label">Asignatura</label>
+              <select v-model="asignaturaSeleccionadaId" class="form-select">
+                <option value="">Seleccionar asignatura</option>
+                <option
+                  v-for="asignatura in asignaturasDisponibles"
+                  :key="asignatura.id"
+                  :value="asignatura.id"
+                >
+                  {{ asignatura.nombre }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Docente responsable</label>
+              <select v-model="docenteSeleccionadoId" class="form-select">
+                <option value="">Seleccionar docente</option>
+                <option
+                  v-for="docente in academic.profesoresFiltrados"
+                  :key="docente.id_docente"
+                  :value="docente.id_docente"
+                >
+                  {{ docente.nombres }} {{ docente.apellido_paterno }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Sala</label>
+              <select v-model="salaSeleccionadaId" class="form-select">
+                <option value="">Seleccionar sala</option>
+                <option v-for="sala in salasDisponibles" :key="sala.id_sala ?? sala.id" :value="sala.id">
+                  {{ sala.nombre }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Horas semanales</label>
+              <select v-model="horasSemanalesSeleccionadas" class="form-select">
+                <option value="">Seleccionar horas</option>
+                <option v-for="horas in opcionesHorasSemanales" :key="horas" :value="horas">
+                  {{ horas }} {{ horas === 1 ? 'hora' : 'horas' }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <button
+                class="btn btn-success btn-rounded w-100"
+                :disabled="guardandoAsignatura"
+                @click="agregarAsignatura"
+              >
+                {{ guardandoAsignatura ? 'Agregando...' : 'Agregar' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Asignatura</th>
+                  <th>Docente responsable</th>
+                  <th>Sala</th>
+                  <th>Horas semanales</th>
+                  <th>Estado</th>
+                  <th class="text-end">Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="item in asignaturasCursoEnPeriodo"
+                  :key="item.id_curso_asignatura ?? item.id"
+                >
+                  <td>{{ item.asignaturaNombre }}</td>
+                  <td>{{ item.docenteNombre }}</td>
+                  <td>{{ item.salaNombre || item.sala_nombre || '—' }}</td>
+                  <td>{{ item.horasSemanales ?? item.horas_semanales ?? '—' }}</td>
+                  <td>
+                    <span class="badge text-bg-success">
+                      {{ item.estado }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <button
+                      class="btn btn-outline-danger btn-sm btn-rounded"
+                      :disabled="guardandoAsignatura"
+                      @click="quitarAsignatura(item)"
+                    >
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+
+                <tr v-if="asignaturasCursoEnPeriodo.length === 0">
+                  <td colspan="6" class="text-center text-muted py-4">
+                    Este curso aún no tiene asignaturas en {{ periodoSeleccionado?.nombre }}.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </div>
     </div>
 

@@ -9,8 +9,12 @@ public class CursoAsignaturaDTO {
     private Integer idCurso;
     private Integer idAsignatura;
     private Integer idDocente;
+    private Integer idPeriodo;
+    private String nombrePeriodo;
     private String asignaturaNombre;
     private String docenteNombre;
     private Integer horasSemanales;
     private String estado;
+    private Integer idSala;
+    private String salaNombre;
 }

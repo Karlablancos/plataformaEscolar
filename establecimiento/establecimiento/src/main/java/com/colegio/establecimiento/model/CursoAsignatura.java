@@ -22,9 +22,15 @@ public class CursoAsignatura {
     @Column(name = "id_docente", nullable = false)
     private Integer idDocente;
 
+    @Column(name = "id_periodo", nullable = false)
+    private Integer idPeriodo;
+
     @Column(name = "horas_semanales", nullable = false)
     private Integer horasSemanales;
 
     @Column(name = "estado", nullable = false)
     private String estado;
+
+    @Column(name = "id_sala")
+    private Integer idSala;
 }
