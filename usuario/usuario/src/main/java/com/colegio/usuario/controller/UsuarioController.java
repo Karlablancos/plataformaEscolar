@@ -5,6 +5,7 @@ import com.colegio.usuario.dto.CambiarPasswordRequest;
 import com.colegio.usuario.dto.CrearUsuarioRequest;
 import com.colegio.usuario.dto.LoginRequest;
 import com.colegio.usuario.dto.UsuarioDTO;
+import com.colegio.usuario.model.Rol;
 import com.colegio.usuario.service.UsuarioService;
 import com.colegio.usuario.dto.CambiarEstadoUsuarioRequest;
 
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -21,6 +23,22 @@ import java.util.List;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+
+    @GetMapping("/roles")
+    public ResponseEntity<List<Rol>> listarRoles() {
+        return ResponseEntity.ok(usuarioService.listarRoles());
+    }
+
+    @PostMapping("/roles")
+    public ResponseEntity<Rol> crearRol(@RequestBody Map<String, String> body) {
+        String nombre = body.get("nombreRol");
+        String descripcion = body.get("descripcion");
+        if (nombre == null || nombre.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(usuarioService.crearRol(nombre, descripcion));
+    }
 
     @GetMapping
     public ResponseEntity<List<UsuarioDTO>> listar(

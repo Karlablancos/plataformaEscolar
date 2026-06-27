@@ -44,13 +44,59 @@
 
           <div class="col-12 col-md-3">
             <label class="form-label">Rol</label>
-            <select v-model="filtroRol" class="form-select">
+            <select
+              class="form-select"
+              :value="filtroRol"
+              @change="seleccionarOpcionRol"
+            >
               <option value="">Todos</option>
-              <option value="1">ADMIN</option>
-              <option value="2">PROFESOR</option>
-              <option value="3">ESTUDIANTE</option>
-              <option value="4">APODERADO</option>
+              <option v-for="rol in roles" :key="rol.idRol" :value="String(rol.idRol)">
+                {{ rol.nombreRol }}
+              </option>
+              <option value="__nuevo__">+ Agregar nuevo rol</option>
             </select>
+
+            <div v-if="mostrarFormularioRol" class="border rounded-3 p-3 mt-2 bg-light">
+              <div class="mb-2">
+                <label class="form-label mb-1">Nombre del rol</label>
+                <input
+                  v-model="nuevoRol.nombreRol"
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="ej: COORDINADOR"
+                  required
+                  @input="(e) => (nuevoRol.nombreRol = e.target.value.toUpperCase())"
+                />
+              </div>
+              <div class="mb-2">
+                <label class="form-label mb-1">Descripción</label>
+                <input
+                  v-model="nuevoRol.descripcion"
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="Descripción del rol"
+                  required
+                />
+              </div>
+              <div v-if="errorNuevoRol" class="text-danger small mb-2">{{ errorNuevoRol }}</div>
+              <div class="d-flex gap-2">
+                <button
+                  type="button"
+                  class="btn btn-success btn-sm rounded-pill"
+                  :disabled="!nuevoRol.nombreRol || !nuevoRol.descripcion"
+                  @click="guardarNuevoRol"
+                >
+                  Guardar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm rounded-pill"
+                  @click="cancelarNuevoRol"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="col-12 col-md-3">
@@ -242,12 +288,62 @@
 
                 <div class="col-12 col-md-6">
                   <label class="form-label">Rol</label>
-                  <select v-model="form.id_rol" class="form-select" required>
-                    <option value="1">ADMIN</option>
-                    <option value="2">PROFESOR</option>
-                    <option value="3">ESTUDIANTE</option>
-                    <option value="4">APODERADO</option>
+                  <select
+                    class="form-select"
+                    :value="form.id_rol ?? ''"
+                    required
+                    @change="seleccionarOpcionRolModal"
+                  >
+                    <option value="" disabled>Seleccionar rol</option>
+                    <option v-for="rol in roles" :key="rol.idRol" :value="rol.idRol">
+                      {{ rol.nombreRol }}
+                    </option>
+                    <option value="__nuevo_modal__">+ Agregar nuevo rol</option>
                   </select>
+
+                  <div v-if="mostrarFormularioRolModal" class="border rounded-3 p-3 mt-2 bg-light">
+                    <div class="mb-2">
+                      <label class="form-label mb-1">Nombre del rol</label>
+                      <input
+                        v-model="nuevoRolModal.nombreRol"
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="ej: COORDINADOR"
+                        required
+                        @input="(e) => (nuevoRolModal.nombreRol = e.target.value.toUpperCase())"
+                      />
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label mb-1">Descripción</label>
+                      <input
+                        v-model="nuevoRolModal.descripcion"
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="Descripción del rol"
+                        required
+                      />
+                    </div>
+                    <div v-if="errorNuevoRolModal" class="text-danger small mb-2">
+                      {{ errorNuevoRolModal }}
+                    </div>
+                    <div class="d-flex gap-2">
+                      <button
+                        type="button"
+                        class="btn btn-success btn-sm rounded-pill"
+                        :disabled="!nuevoRolModal.nombreRol || !nuevoRolModal.descripcion"
+                        @click="guardarNuevoRolModal"
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm rounded-pill"
+                        @click="cancelarNuevoRolModal"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="col-12 col-md-6">
@@ -363,12 +459,95 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Modal } from 'bootstrap'
 import { useUsuariosStore } from '@/stores/usuariosStore'
+import api from '@/api/axios'
 
 const usuariosStore = useUsuariosStore()
 
 const busqueda = ref('')
 const filtroRol = ref('')
 const filtroEstado = ref('')
+
+const roles = ref([])
+const mostrarFormularioRol = ref(false)
+const nuevoRol = reactive({ nombreRol: '', descripcion: '' })
+const errorNuevoRol = ref('')
+
+const mostrarFormularioRolModal = ref(false)
+const nuevoRolModal = reactive({ nombreRol: '', descripcion: '' })
+const errorNuevoRolModal = ref('')
+
+const cargarRoles = async () => {
+  const { data } = await api.get('/usuarios/roles')
+  roles.value = data
+}
+
+const seleccionarOpcionRol = (event) => {
+  if (event.target.value === '__nuevo__') {
+    mostrarFormularioRol.value = true
+    filtroRol.value = ''
+  } else {
+    filtroRol.value = event.target.value
+    mostrarFormularioRol.value = false
+  }
+}
+
+const guardarNuevoRol = async () => {
+  errorNuevoRol.value = ''
+  try {
+    const { data } = await api.post('/usuarios/roles', {
+      nombreRol: nuevoRol.nombreRol,
+      descripcion: nuevoRol.descripcion,
+    })
+    await cargarRoles()
+    filtroRol.value = String(data.idRol)
+    mostrarFormularioRol.value = false
+    nuevoRol.nombreRol = ''
+    nuevoRol.descripcion = ''
+  } catch {
+    errorNuevoRol.value = 'No se pudo guardar el rol.'
+  }
+}
+
+const cancelarNuevoRol = () => {
+  mostrarFormularioRol.value = false
+  nuevoRol.nombreRol = ''
+  nuevoRol.descripcion = ''
+  errorNuevoRol.value = ''
+}
+
+const seleccionarOpcionRolModal = (event) => {
+  if (event.target.value === '__nuevo_modal__') {
+    mostrarFormularioRolModal.value = true
+    form.id_rol = null
+  } else {
+    form.id_rol = event.target.value === '' ? null : Number(event.target.value)
+    mostrarFormularioRolModal.value = false
+  }
+}
+
+const guardarNuevoRolModal = async () => {
+  errorNuevoRolModal.value = ''
+  try {
+    const { data } = await api.post('/usuarios/roles', {
+      nombreRol: nuevoRolModal.nombreRol,
+      descripcion: nuevoRolModal.descripcion,
+    })
+    await cargarRoles()
+    form.id_rol = data.idRol
+    mostrarFormularioRolModal.value = false
+    nuevoRolModal.nombreRol = ''
+    nuevoRolModal.descripcion = ''
+  } catch {
+    errorNuevoRolModal.value = 'No se pudo guardar el rol.'
+  }
+}
+
+const cancelarNuevoRolModal = () => {
+  mostrarFormularioRolModal.value = false
+  nuevoRolModal.nombreRol = ''
+  nuevoRolModal.descripcion = ''
+  errorNuevoRolModal.value = ''
+}
 const mensajeExito = ref('')
 const mensajeError = ref('')
 const usuarioSeleccionado = ref(null)
@@ -385,7 +564,7 @@ const form = reactive({
 })
 
 onMounted(async () => {
-  await usuariosStore.cargarUsuarios()
+  await Promise.all([usuariosStore.cargarUsuarios(), cargarRoles()])
 })
 
 const usuariosFiltrados = computed(() => {
@@ -408,14 +587,8 @@ const usuariosFiltrados = computed(() => {
 })
 
 const nombreRol = (idRol) => {
-  const roles = {
-    1: 'ADMIN',
-    2: 'PROFESOR',
-    3: 'ESTUDIANTE',
-    4: 'APODERADO',
-  }
-
-  return roles[idRol] || `ROL ${idRol}`
+  const rol = roles.value.find((r) => r.idRol === idRol)
+  return rol ? rol.nombreRol : `ROL ${idRol}`
 }
 
 const limpiarFiltros = () => {
