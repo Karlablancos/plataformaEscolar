@@ -51,6 +51,10 @@
               <RouterLink class="nav-link fs-5" to="/admin/asignaturas"> Asignaturas </RouterLink>
             </li>
 
+            <li class="nav-item" v-if="auth.isAdmin">
+              <RouterLink class="nav-link fs-5" to="/admin/salas"> Salas </RouterLink>
+            </li>
+
             <li class="nav-item dropdown">
               <a
                 class="nav-link dropdown-toggle fs-5"
@@ -75,6 +79,11 @@
                 <li>
                   <RouterLink class="dropdown-item" fs-5 :to="academicoPath('promocion')">
                     <i class="bi bi-award me-2"></i>Promoción
+                  </RouterLink>
+                </li>
+                <li>
+                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('asistencia')">
+                    <i class="bi bi-calendar-check me-2"></i>Asistencia
                   </RouterLink>
                 </li>
               </ul>

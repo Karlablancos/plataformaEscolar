@@ -9,6 +9,7 @@ import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
 import com.colegio.establecimiento.dto.RegionDTO;
+import com.colegio.establecimiento.dto.SalaDTO;
 import com.colegio.establecimiento.dto.TipoCalificacionDTO;
 import com.colegio.establecimiento.model.Asignatura;
 import com.colegio.establecimiento.model.Comuna;
@@ -19,6 +20,7 @@ import com.colegio.establecimiento.model.Establecimiento;
 import com.colegio.establecimiento.model.Estudiante;
 import com.colegio.establecimiento.model.EstudianteCurso;
 import com.colegio.establecimiento.model.Region;
+import com.colegio.establecimiento.model.Sala;
 import com.colegio.establecimiento.model.TipoCalificacion;
 import com.colegio.establecimiento.repository.AsignaturaRepository;
 import com.colegio.establecimiento.repository.ComunaRepository;
@@ -29,6 +31,7 @@ import com.colegio.establecimiento.repository.EstablecimientoRepository;
 import com.colegio.establecimiento.repository.EstudianteCursoRepository;
 import com.colegio.establecimiento.repository.EstudianteRepository;
 import com.colegio.establecimiento.repository.RegionRepository;
+import com.colegio.establecimiento.repository.SalaRepository;
 import com.colegio.establecimiento.repository.TipoCalificacionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -54,6 +57,7 @@ public class EstablecimientoService {
     private final TipoCalificacionRepository tipoCalificacionRepository;
     private final RegionRepository regionRepository;
     private final ComunaRepository comunaRepository;
+    private final SalaRepository salaRepository;
 
     public List<EstablecimientoDTO> listarTodos(Integer idEstablecimiento) {
         List<Establecimiento> fuente = (idEstablecimiento != null)
@@ -579,6 +583,88 @@ public class EstablecimientoService {
         dto.setCodigo(a.getCodigo());
         dto.setIdTipoCalificacion(a.getIdTipoCalificacion());
         dto.setEstado(a.getEstado());
+        return dto;
+    }
+
+    public List<SalaDTO> listarSalas(Integer idEstablecimiento) {
+        validarEstablecimiento(idEstablecimiento);
+        return salaRepository.findByIdEstablecimiento(idEstablecimiento)
+                .stream()
+                .map(this::toSalaDTO)
+                .toList();
+    }
+
+    public SalaDTO crearSala(Integer idEstablecimiento, SalaDTO dto) {
+        validarEstablecimiento(idEstablecimiento);
+        validarDatosSala(dto);
+
+        Sala sala = new Sala();
+        sala.setIdEstablecimiento(idEstablecimiento);
+        sala.setNumero(dto.getNumero());
+        sala.setNombre(dto.getNombre().trim());
+        sala.setCapacidad(dto.getCapacidad());
+        sala.setTipo(dto.getTipo().trim().toUpperCase());
+        sala.setPiso(dto.getPiso());
+        sala.setEstado(normalizarEstado(dto.getEstado()));
+
+        return toSalaDTO(salaRepository.save(sala));
+    }
+
+    public Optional<SalaDTO> actualizarSala(Integer idEstablecimiento, Integer idSala, SalaDTO dto) {
+        return salaRepository.findByIdSalaAndIdEstablecimiento(idSala, idEstablecimiento)
+                .map(sala -> {
+                    validarDatosSala(dto);
+                    sala.setNumero(dto.getNumero());
+                    sala.setNombre(dto.getNombre().trim());
+                    sala.setCapacidad(dto.getCapacidad());
+                    sala.setTipo(dto.getTipo().trim().toUpperCase());
+                    sala.setPiso(dto.getPiso());
+                    sala.setEstado(normalizarEstado(dto.getEstado()));
+                    return toSalaDTO(salaRepository.save(sala));
+                });
+    }
+
+    public boolean eliminarSala(Integer idEstablecimiento, Integer idSala) {
+        Optional<Sala> sala = salaRepository.findByIdSalaAndIdEstablecimiento(idSala, idEstablecimiento);
+
+        if (sala.isEmpty()) {
+            return false;
+        }
+
+        try {
+            salaRepository.delete(sala.get());
+            return true;
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar la sala porque está asociada a horarios.");
+        }
+    }
+
+    private void validarDatosSala(SalaDTO dto) {
+        if (dto.getNombre() == null || dto.getNombre().isBlank()) {
+            throw new IllegalArgumentException("El nombre de la sala es obligatorio.");
+        }
+        if (dto.getCapacidad() == null || dto.getCapacidad() < 1) {
+            throw new IllegalArgumentException("La capacidad debe ser mayor a cero.");
+        }
+        if (dto.getTipo() == null || dto.getTipo().isBlank()) {
+            throw new IllegalArgumentException("El tipo de sala es obligatorio.");
+        }
+        if (dto.getPiso() == null) {
+            throw new IllegalArgumentException("El piso es obligatorio.");
+        }
+    }
+
+    private SalaDTO toSalaDTO(Sala s) {
+        SalaDTO dto = new SalaDTO();
+        dto.setIdSala(s.getIdSala());
+        dto.setIdEstablecimiento(s.getIdEstablecimiento());
+        dto.setNumero(s.getNumero());
+        dto.setNombre(s.getNombre());
+        dto.setCapacidad(s.getCapacidad());
+        dto.setTipo(s.getTipo());
+        dto.setPiso(s.getPiso());
+        dto.setEstado(s.getEstado());
         return dto;
     }
 

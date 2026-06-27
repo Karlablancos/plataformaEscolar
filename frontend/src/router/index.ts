@@ -22,6 +22,8 @@ import AsignaturasView from '../views/asignaturas/AsignaturasView.vue'
 import EvaluacionesView from '../views/academico/EvaluacionesView.vue'
 import LibroNotasView from '../views/academico/LibroNotasView.vue'
 import PromocionView from '../views/academico/PromocionView.vue'
+import AsistenciaView from '../views/asistencia/AsistenciaView.vue'
+import SalasView from '../views/salas/SalasView.vue'
 
 const routes = [
   {
@@ -140,6 +142,16 @@ const routes = [
         name: 'promocion',
         component: PromocionView,
       },
+      {
+        path: 'academico/asistencia',
+        name: 'asistencia',
+        component: AsistenciaView,
+      },
+      {
+        path: 'salas',
+        name: 'salas',
+        component: SalasView,
+      },
     ],
   },
 
@@ -184,6 +196,11 @@ const routes = [
         path: 'academico/promocion',
         name: 'profesor-promocion',
         component: PromocionView,
+      },
+      {
+        path: 'academico/asistencia',
+        name: 'profesor-asistencia',
+        component: AsistenciaView,
       },
     ],
   },
