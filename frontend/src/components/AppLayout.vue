@@ -35,7 +35,7 @@
               <RouterLink class="nav-link fs-5" :to="homePath">Inicio</RouterLink>
             </li>
 
-            <li class="nav-item" v-if="!auth.isProfesor">
+            <li class="nav-item" v-if="auth.isAdmin">
               <RouterLink class="nav-link fs-5" to="/admin/establecimiento">
                 Establecimiento
               </RouterLink>
@@ -47,7 +47,7 @@
               <RouterLink class="nav-link fs-5" :to="cursosPath"> Cursos </RouterLink>
             </li>
 
-            <li class="nav-item" v-if="auth.isAdmin">
+            <li class="nav-item" v-if="auth.isAdmin || auth.isDirector">
               <RouterLink class="nav-link fs-5" to="/admin/asignaturas"> Asignaturas </RouterLink>
             </li>
 
@@ -88,14 +88,13 @@
                 </li>
               </ul>
             </li>
-            <li class="nav-item dropdown">
+            <li class="nav-item dropdown" v-if="auth.isAdmin">
               <a
                 class="nav-link dropdown-toggle fs-5"
                 href="#"
                 role="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
-                
               >
                 Usuarios
               </a>

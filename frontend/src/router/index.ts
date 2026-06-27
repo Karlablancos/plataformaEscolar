@@ -61,96 +61,115 @@ const routes = [
         path: 'dashboard-admin',
         name: 'dashboard-admin',
         component: DashboardAdminView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'establecimiento',
         name: 'establecimiento',
         component: EstablecimientoView,
+        // solo ADMINISTRADOR — hereda roles del padre
       },
       {
         path: 'usuarios',
         name: 'usuarios',
         component: () => import('@/views/usuarios/UsuariosView.vue'),
+        // solo ADMINISTRADOR — hereda roles del padre
       },
       {
         path: 'alumnos',
         name: 'alumnos',
         component: AlumnosListView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'alumnos/nuevo',
         name: 'alumnos-nuevo',
         component: AlumnoCreateView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'alumnos/:id',
         name: 'alumnos-detalle',
         component: AlumnoDetailView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'alumnos/:id/editar',
         name: 'alumnos-editar',
         component: AlumnoDetailView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'cursos',
         name: 'cursos',
         component: CursosView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'cursos/:id',
         name: 'curso-detalle',
         component: CursoDetalleView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'profesores',
         name: 'profesores',
         component: ProfesoresView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'profesores/nuevo',
         name: 'profesores-nuevo',
         component: ProfesorFormView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'profesores/:id',
         name: 'profesores-detalle',
         component: ProfesorDetailView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'profesores/:id/editar',
         name: 'profesores-editar',
         component: ProfesorFormView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'asignaturas',
         name: 'asignaturas',
         component: AsignaturasView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'academico/evaluaciones',
         name: 'evaluaciones',
         component: EvaluacionesView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'academico/libro-notas',
         name: 'libro-notas',
         component: LibroNotasView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'academico/promocion',
         name: 'promocion',
         component: PromocionView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'academico/asistencia',
         name: 'asistencia',
         component: AsistenciaView,
+        meta: { roles: ['ADMINISTRADOR', 'DIRECTOR'] },
       },
       {
         path: 'salas',
         name: 'salas',
         component: SalasView,
+        // solo ADMINISTRADOR — hereda roles del padre
       },
     ],
   },
@@ -245,12 +264,15 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresAuth) {
-    const allowedRoles = to.matched
+    // Usa la ruta más específica (hijo sobre padre) para resolver roles
+    const allowedRoles = [...to.matched]
+      .reverse()
       .map((r) => r.meta.roles)
       .find((roles) => roles) as string[] | undefined
 
     if (allowedRoles && user && !allowedRoles.includes(user.rol)) {
       if (user.rol === 'DOCENTE') return '/profesor/dashboard-docente'
+      if (user.rol === 'DIRECTOR') return '/admin/dashboard-admin'
       return '/admin/dashboard-admin'
     }
   }
