@@ -7,5 +7,7 @@ public class CursoAsignaturaRequestDTO {
 
     private Integer idAsignatura;
     private Integer idDocente;
+    private Integer idPeriodo;
     private Integer horasSemanales;
+    private Integer idSala;
 }

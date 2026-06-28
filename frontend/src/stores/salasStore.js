@@ -15,7 +15,7 @@ const mapEstadoFromApi = (estado) => {
   return normalizado.startsWith('INACTIV') ? 'INACTIVO' : 'ACTIVO'
 }
 
-const mapSalaFromApi = (dto) => ({
+export const mapSalaFromApi = (dto) => ({
   id: dto.idSala,
   id_sala: dto.idSala,
   id_establecimiento: Number(dto.idEstablecimiento),
@@ -39,6 +39,17 @@ const toSalaPayload = (data) => ({
 
 const getSalaId = (sala) => sala.id_sala ?? sala.id
 
+const salasDelEstablecimientoActivo = (salas) => {
+  const establecimientoId = resolveEstablecimientoId()
+  return salas
+    .filter((sala) => Number(sala.id_establecimiento) === Number(establecimientoId))
+    .map((sala) => ({
+      ...sala,
+      id: getSalaId(sala),
+      id_sala: getSalaId(sala),
+    }))
+}
+
 export const useSalasStore = defineStore('salas', {
   state: () => ({
     salas: [],
@@ -47,17 +58,10 @@ export const useSalasStore = defineStore('salas', {
   }),
 
   getters: {
-    salasFiltradasNormalizadas: (state) => {
-      const establecimientoId = resolveEstablecimientoId()
+    salasFiltradasNormalizadas: (state) => salasDelEstablecimientoActivo(state.salas),
 
-      return state.salas
-        .filter((sala) => Number(sala.id_establecimiento) === Number(establecimientoId))
-        .map((sala) => ({
-          ...sala,
-          id: getSalaId(sala),
-          id_sala: getSalaId(sala),
-        }))
-    },
+    salasActivas: (state) =>
+      salasDelEstablecimientoActivo(state.salas).filter((sala) => sala.estado === 'ACTIVO'),
 
     getSalaById: (state) => {
       return (id) => {
@@ -70,7 +74,7 @@ export const useSalasStore = defineStore('salas', {
   actions: {
     async cargarSalas() {
       const idEstablecimiento = resolveEstablecimientoId()
-      if (!idEstablecimiento) return
+      if (!idEstablecimiento) return []
 
       this.cargando = true
       this.error = null
@@ -78,6 +82,7 @@ export const useSalasStore = defineStore('salas', {
       try {
         const { data } = await api.get(`/establecimiento/${idEstablecimiento}/salas`)
         this.salas = data.map(mapSalaFromApi)
+        return this.salas
       } catch (error) {
         this.error = error
         console.warn('cargarSalas: error al cargar desde API', error?.message)

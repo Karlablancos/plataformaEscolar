@@ -334,11 +334,15 @@ CREATE TABLE curso_asignatura (
     id_curso                INT             NOT NULL,
     id_asignatura           INT             NOT NULL,
     id_docente              INT             NOT NULL,
+    id_periodo              INT             NOT NULL,
     horas_semanales         INT             NOT NULL,
     estado                  VARCHAR(20)     NOT NULL,
+    id_sala                 INT,
     CONSTRAINT fk_ca_curso      FOREIGN KEY (id_curso)      REFERENCES curso(id_curso),
     CONSTRAINT fk_ca_asignatura FOREIGN KEY (id_asignatura) REFERENCES asignatura(id_asignatura),
-    CONSTRAINT fk_ca_docente    FOREIGN KEY (id_docente)    REFERENCES docente(id_docente)
+    CONSTRAINT fk_ca_docente    FOREIGN KEY (id_docente)    REFERENCES docente(id_docente),
+    CONSTRAINT fk_ca_periodo    FOREIGN KEY (id_periodo)    REFERENCES periodo_academico(id_periodo),
+    CONSTRAINT fk_ca_sala       FOREIGN KEY (id_sala)       REFERENCES sala(id_sala)
 );
  
 -- ============================================================

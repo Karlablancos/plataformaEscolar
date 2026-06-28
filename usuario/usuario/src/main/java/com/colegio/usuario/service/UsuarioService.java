@@ -3,16 +3,19 @@ package com.colegio.usuario.service;
 import com.colegio.usuario.dto.ActualizarUsuarioRequest;
 import com.colegio.usuario.dto.CambiarPasswordRequest;
 import com.colegio.usuario.dto.CrearUsuarioRequest;
+import com.colegio.usuario.dto.EliminarUsuarioResponse;
 import com.colegio.usuario.dto.UsuarioDTO;
 import com.colegio.usuario.factory.UsuarioFactory;
 import com.colegio.usuario.model.Rol;
 import com.colegio.usuario.model.Usuario;
 import com.colegio.usuario.repository.RolRepository;
+import com.colegio.usuario.repository.UsuarioAsociacionRepository;
 import com.colegio.usuario.repository.UsuarioRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioAsociacionRepository usuarioAsociacionRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final List<UsuarioFactory> factoryList;
@@ -119,8 +123,28 @@ public class UsuarioService {
         }).orElse(false);
     }
 
-    public void eliminar(Integer id) {
+    @Transactional
+    public EliminarUsuarioResponse eliminar(Integer id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (usuarioAsociacionRepository.tieneAsociaciones(id)) {
+            usuario.setEstado("INACTIVO");
+            Usuario usuarioActualizado = usuarioRepository.save(usuario);
+            usuarioAsociacionRepository.desactivarRegistrosAsociados(id);
+
+            return new EliminarUsuarioResponse(
+                    "DESACTIVADO",
+                    "El usuario tiene registros asociados y fue marcado como inactivo.",
+                    convertirADTO(usuarioActualizado));
+        }
+
         usuarioRepository.deleteById(id);
+
+        return new EliminarUsuarioResponse(
+                "ELIMINADO",
+                "Usuario eliminado correctamente.",
+                null);
     }
 
     public boolean existeUsername(String username) {

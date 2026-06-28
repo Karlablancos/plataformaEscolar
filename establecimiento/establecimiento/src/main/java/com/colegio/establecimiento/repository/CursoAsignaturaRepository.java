@@ -12,5 +12,11 @@ public interface CursoAsignaturaRepository extends JpaRepository<CursoAsignatura
 
     List<CursoAsignatura> findByIdCursoAndEstado(Integer idCurso, String estado);
 
+    List<CursoAsignatura> findByIdCursoAndIdPeriodoAndEstado(
+            Integer idCurso, Integer idPeriodo, String estado);
+
+    Optional<CursoAsignatura> findByIdCursoAndIdAsignaturaAndIdPeriodo(
+            Integer idCurso, Integer idAsignatura, Integer idPeriodo);
+
     Optional<CursoAsignatura> findByIdCursoAndIdAsignatura(Integer idCurso, Integer idAsignatura);
 }

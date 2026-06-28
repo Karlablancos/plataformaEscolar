@@ -17,7 +17,7 @@ export const mapEstudianteFromApi = (e) => ({
   apellido_materno: e.apellidoMaterno?.trim() ?? '',
   apellidoMaterno: e.apellidoMaterno?.trim() ?? '',
   nombreCompleto: e.nombreCompleto?.trim() ?? '',
-  rut: e.rut?.trim() ?? '',
+  rut: e.dv ? `${e.rut}-${e.dv}` : e.rut?.trim() ?? '',
   dv: e.dv?.trim() ?? '',
   rutFormateado: formatearRut(e.rut, e.dv),
   correo_electronico: e.correoElectronico ?? '',
@@ -47,19 +47,19 @@ export const mapEstudianteFromApi = (e) => ({
   promedio: 0,
 })
 
-export const toEstudiantePayload = (data) => ({
+export const mapEstudianteToApi = (data) => ({
   rut: data.rut ?? '',
   dv: data.dv ?? '',
   nombres: data.nombres ?? '',
   apellidoPaterno: data.apellidoPaterno ?? data.apellido_paterno ?? '',
   apellidoMaterno: data.apellidoMaterno ?? data.apellido_materno ?? '',
   fechaNacimiento: data.fechaNacimiento ?? data.fecha_nacimiento ?? null,
-  correoElectronico: data.correoElectronico ?? data.correo_electronico ?? '',
-  telefono: data.telefono ?? '',
-  calle: data.calle ?? '',
-  numero: data.numero ?? '',
+  correoElectronico: data.correoElectronico ?? data.correo_electronico ?? null,
+  telefono: data.telefono ?? null,
+  calle: data.calle ?? null,
+  numero: data.numero ?? null,
   idComuna: data.comunaId ?? data.idComuna ?? data.id_comuna ?? null,
-  colegioProcedente: data.colegioProcedente ?? data.colegio_procedente ?? '',
+  colegioProcedente: data.colegioProcedente ?? data.colegio_procedente ?? null,
   fechaMatricula: data.fechaMatricula ?? data.fecha_matricula ?? null,
   prioritario: Boolean(data.prioritario),
   preferente: Boolean(data.preferente),
@@ -67,4 +67,5 @@ export const toEstudiantePayload = (data) => ({
   idTipoNee: data.tieneNee ? (data.tipoNeeId ?? data.idTipoNee ?? null) : null,
   enPie: Boolean(data.enPie),
   estado: data.estado ?? 'Activo',
+  idCurso: data.cursoId ? Number(data.cursoId) : null,
 })

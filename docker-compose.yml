@@ -123,6 +123,9 @@ services:
     container_name: libro-clases-frontend
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       bff-gateway:
         condition: service_healthy

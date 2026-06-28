@@ -4,7 +4,7 @@
       <div class="container">
         <img src="/logo-BOH.png" alt="Logo" class="me-2" style="height: 85px; width: 85px;" />
         <div class="d-flex flex-column">
-          <RouterLink class="navbar-brand fw-bold mb-0 p-0 fs-6"
+          <RouterLink class="navbar-brand fw-bold mb-0 p-0 fs-7"
             :to="homePath"
             v-html="nombreColegio.replace(' ', '<br>').replace(' ', '<br>')">
           </RouterLink>
@@ -32,11 +32,11 @@
         <div id="mainNavbar" class="collapse navbar-collapse justify-content-end">
           <ul class="navbar-nav align-items-lg-center gap-lg-2 mb-2 mb-lg-0">
             <li class="nav-item">
-              <RouterLink class="nav-link fs-5" :to="homePath">Inicio</RouterLink>
+              <RouterLink class="nav-link fs-6" :to="homePath">Inicio</RouterLink>
             </li>
 
             <li class="nav-item" v-if="auth.isAdmin">
-              <RouterLink class="nav-link fs-5" to="/admin/establecimiento">
+              <RouterLink class="nav-link fs-6" to="/admin/establecimiento">
                 Establecimiento
               </RouterLink>
             </li>
@@ -44,20 +44,20 @@
             
 
             <li class="nav-item">
-              <RouterLink class="nav-link fs-5" :to="cursosPath"> Cursos </RouterLink>
+              <RouterLink class="nav-link fs-6" :to="cursosPath"> Cursos </RouterLink>
             </li>
 
             <li class="nav-item" v-if="auth.isAdmin || auth.isDirector">
-              <RouterLink class="nav-link fs-5" to="/admin/asignaturas"> Asignaturas </RouterLink>
+              <RouterLink class="nav-link fs-6" to="/admin/asignaturas"> Asignaturas </RouterLink>
             </li>
 
             <li class="nav-item" v-if="auth.isAdmin">
-              <RouterLink class="nav-link fs-5" to="/admin/salas"> Salas </RouterLink>
+              <RouterLink class="nav-link fs-6" to="/admin/salas"> Salas </RouterLink>
             </li>
 
             <li class="nav-item dropdown">
               <a
-                class="nav-link dropdown-toggle fs-5"
+                class="nav-link dropdown-toggle fs-6"
                 href="#"
                 role="button"
                 data-bs-toggle="dropdown"
@@ -67,22 +67,22 @@
               </a>
               <ul class="dropdown-menu">
                 <li>
-                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('evaluaciones')">
+                  <RouterLink class="dropdown-item fs-6" :to="academicoPath('evaluaciones')">
                     <i class="bi bi-journal-check me-2"></i>Evaluaciones
                   </RouterLink>
                 </li>
                 <li>
-                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('libro-notas')">
+                  <RouterLink class="dropdown-item fs-6" :to="academicoPath('libro-notas')">
                     <i class="bi bi-table me-2"></i>Libro de Notas
                   </RouterLink>
                 </li>
                 <li>
-                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('promocion')">
+                  <RouterLink class="dropdown-item fs-6" :to="academicoPath('promocion')">
                     <i class="bi bi-award me-2"></i>Promoción
                   </RouterLink>
                 </li>
                 <li>
-                  <RouterLink class="dropdown-item" fs-5 :to="academicoPath('asistencia')">
+                  <RouterLink class="dropdown-item fs-6" :to="academicoPath('asistencia')">
                     <i class="bi bi-calendar-check me-2"></i>Asistencia
                   </RouterLink>
                 </li>
@@ -90,7 +90,7 @@
             </li>
             <li class="nav-item dropdown" v-if="auth.isAdmin">
               <a
-                class="nav-link dropdown-toggle fs-5"
+                class="nav-link dropdown-toggle fs-6"
                 href="#"
                 role="button"
                 data-bs-toggle="dropdown"
@@ -101,19 +101,19 @@
 
               <ul class="dropdown-menu">
                 <li>
-                  <RouterLink class="dropdown-item" fs-5 to="/admin/usuarios">
+                  <RouterLink class="dropdown-item fs-6" to="/admin/usuarios">
                     Usuarios administrativos
                   </RouterLink>
                 </li>
 
                 <li>
-                  <RouterLink class="dropdown-item" fs-5 to="/admin/profesores">
+                  <RouterLink class="dropdown-item fs-6" to="/admin/profesores">
                     Profesores
                   </RouterLink>
                 </li>
 
                 <li>
-                  <RouterLink class="dropdown-item" fs-5 to="/admin/alumnos">
+                  <RouterLink class="dropdown-item fs-6" to="/admin/alumnos">
                     Alumnos
                   </RouterLink>
                 </li>

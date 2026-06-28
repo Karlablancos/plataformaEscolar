@@ -126,7 +126,7 @@
 
                   <button
                     class="btn btn-outline-danger btn-sm btn-rounded"
-                    @click="eliminarAsignatura(asignatura)"
+                    @click="abrirEliminarAsignatura(asignatura)"
                   >
                     <i class="bi bi-trash me-1"></i>
                     Eliminar
@@ -257,12 +257,21 @@
         </div>
       </div>
     </div>
+
+    <ConfirmDeleteModal
+      v-model="showEliminarModal"
+      message="¿Seguro que deseas eliminar esta asignatura?"
+      :item-label="asignaturaAEliminar?.nombre || ''"
+      :loading="asignaturasStore.cargando"
+      @confirm="confirmarEliminarAsignatura"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAsignaturasStore } from '@/stores/asignaturasStore'
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
 
 const asignaturasStore = useAsignaturasStore()
 
@@ -375,17 +384,23 @@ const guardarAsignatura = async () => {
   }
 }
 
-const eliminarAsignatura = async (asignatura) => {
-  const confirmacion = window.confirm(
-    `¿Seguro que deseas eliminar la asignatura "${asignatura.nombre}"?`,
-  )
+const asignaturaAEliminar = ref(null)
+const showEliminarModal = ref(false)
 
-  if (!confirmacion) return
+const abrirEliminarAsignatura = (asignatura) => {
+  asignaturaAEliminar.value = asignatura
+  showEliminarModal.value = true
+}
+
+const confirmarEliminarAsignatura = async () => {
+  if (!asignaturaAEliminar.value) return
 
   mensajeError.value = ''
 
   try {
-    await asignaturasStore.eliminarAsignatura(asignatura.id_asignatura)
+    await asignaturasStore.eliminarAsignatura(asignaturaAEliminar.value.id_asignatura)
+    showEliminarModal.value = false
+    asignaturaAEliminar.value = null
   } catch (error) {
     mensajeError.value = extraerMensajeError(error)
   }

@@ -120,7 +120,7 @@
 
                   <button
                     class="btn btn-outline-danger btn-sm btn-rounded"
-                    @click="eliminarSala(sala)"
+                    @click="abrirEliminarSala(sala)"
                   >
                     <i class="bi bi-trash me-1"></i>Eliminar
                   </button>
@@ -237,12 +237,21 @@
         </div>
       </div>
     </div>
+
+    <ConfirmDeleteModal
+      v-model="showEliminarModal"
+      message="¿Seguro que deseas eliminar esta sala?"
+      :item-label="salaAEliminar?.nombre || ''"
+      :loading="salasStore.cargando"
+      @confirm="confirmarEliminarSala"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useSalasStore } from '@/stores/salasStore'
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
 
 const salasStore = useSalasStore()
 
@@ -373,14 +382,23 @@ const guardarSala = async () => {
   }
 }
 
-const eliminarSala = async (sala) => {
-  const confirmacion = window.confirm(`¿Seguro que deseas eliminar la sala "${sala.nombre}"?`)
-  if (!confirmacion) return
+const salaAEliminar = ref(null)
+const showEliminarModal = ref(false)
+
+const abrirEliminarSala = (sala) => {
+  salaAEliminar.value = sala
+  showEliminarModal.value = true
+}
+
+const confirmarEliminarSala = async () => {
+  if (!salaAEliminar.value) return
 
   mensajeError.value = ''
 
   try {
-    await salasStore.eliminarSala(sala.id_sala)
+    await salasStore.eliminarSala(salaAEliminar.value.id_sala)
+    showEliminarModal.value = false
+    salaAEliminar.value = null
   } catch (error) {
     mensajeError.value = extraerMensajeError(error)
   }

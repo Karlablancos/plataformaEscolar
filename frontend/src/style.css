@@ -67,6 +67,10 @@ body {
   background: linear-gradient(135deg, #6f42c1 0%, #4b0082 100%);
 }
 
+.fs-7 {
+  font-size: 0.9rem;
+}
+
 .navbar-colegio .btn-outline-light {
   border-radius: 50px;
 }

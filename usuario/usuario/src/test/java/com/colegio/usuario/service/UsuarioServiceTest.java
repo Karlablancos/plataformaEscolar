@@ -3,6 +3,7 @@ package com.colegio.usuario.service;
 import com.colegio.usuario.dto.ActualizarUsuarioRequest;
 import com.colegio.usuario.dto.CambiarPasswordRequest;
 import com.colegio.usuario.dto.CrearUsuarioRequest;
+import com.colegio.usuario.dto.EliminarUsuarioResponse;
 import com.colegio.usuario.dto.UsuarioDTO;
 import com.colegio.usuario.factory.AdminUsuarioFactory;
 import com.colegio.usuario.factory.ApoderadoUsuarioFactory;
@@ -10,6 +11,7 @@ import com.colegio.usuario.factory.ProfesorUsuarioFactory;
 import com.colegio.usuario.factory.UsuarioFactory;
 import com.colegio.usuario.model.Usuario;
 import com.colegio.usuario.repository.RolRepository;
+import com.colegio.usuario.repository.UsuarioAsociacionRepository;
 import com.colegio.usuario.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,9 @@ class UsuarioServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @Mock
+    private UsuarioAsociacionRepository usuarioAsociacionRepository;
+
+    @Mock
     private RolRepository rolRepository;
 
     @Mock
@@ -48,7 +53,12 @@ class UsuarioServiceTest {
                 new ProfesorUsuarioFactory(),
                 new ApoderadoUsuarioFactory()
         );
-        usuarioService = new UsuarioService(usuarioRepository, rolRepository, passwordEncoder, factories);
+        usuarioService = new UsuarioService(
+                usuarioRepository,
+                usuarioAsociacionRepository,
+                rolRepository,
+                passwordEncoder,
+                factories);
         usuarioService.initFactories();
     }
 
@@ -250,12 +260,36 @@ class UsuarioServiceTest {
     // ── eliminar ──────────────────────────────────────────────────
 
     @Test
-    void eliminar_debeInvocarDeleteById() {
-        doNothing().when(usuarioRepository).deleteById(1);
+    void eliminar_sinAsociaciones_debeEliminarUsuario() {
+        Usuario usuario = usuarioEjemplo();
+        when(usuarioRepository.findById(1)).thenReturn(Optional.of(usuario));
+        when(usuarioAsociacionRepository.tieneAsociaciones(1)).thenReturn(false);
 
-        usuarioService.eliminar(1);
+        EliminarUsuarioResponse resultado = usuarioService.eliminar(1);
 
+        assertEquals("ELIMINADO", resultado.getAccion());
         verify(usuarioRepository, times(1)).deleteById(1);
+        verify(usuarioAsociacionRepository, never()).desactivarRegistrosAsociados(any());
+    }
+
+    @Test
+    void eliminar_conAsociaciones_debeDesactivarUsuario() {
+        Usuario usuario = usuarioEjemplo();
+        when(usuarioRepository.findById(1)).thenReturn(Optional.of(usuario));
+        when(usuarioAsociacionRepository.tieneAsociaciones(1)).thenReturn(true);
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario guardado = invocation.getArgument(0);
+            assertEquals("INACTIVO", guardado.getEstado());
+            return guardado;
+        });
+        when(usuarioRepository.findNombreRolById(2)).thenReturn("DOCENTE");
+
+        EliminarUsuarioResponse resultado = usuarioService.eliminar(1);
+
+        assertEquals("DESACTIVADO", resultado.getAccion());
+        assertEquals("INACTIVO", resultado.getUsuario().getEstado());
+        verify(usuarioRepository, never()).deleteById(any());
+        verify(usuarioAsociacionRepository).desactivarRegistrosAsociados(1);
     }
 
     // ── existeUsername ────────────────────────────────────────────

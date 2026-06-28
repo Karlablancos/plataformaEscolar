@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getNombreCompleto } from './shared/helpers'
-import { mapEstudianteFromApi, toEstudiantePayload } from './shared/estudianteMapper'
+import { mapEstudianteFromApi, mapEstudianteToApi } from './shared/estudianteMapper'
 import api from '@/api/axios'
 
 const getAlumnoId = (alumno) => alumno.id_alumno ?? alumno.id
@@ -202,7 +202,7 @@ export const useAlumnosStore = defineStore('alumnos', {
       saveToStorage('documentosEstudiante', this.documentosEstudiante)
     },
 
-    async agregarAlumno(data) {
+    async crearAlumno(data) {
       const idEstablecimiento =
         getEstablecimientoId() ??
         JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
@@ -211,20 +211,35 @@ export const useAlumnosStore = defineStore('alumnos', {
         throw new Error('No se encontró el establecimiento activo.')
       }
 
-      this.cargando = true
-      try {
-        const { data: creado } = await api.post(
-          `/establecimiento/${idEstablecimiento}/estudiantes`,
-          toEstudiantePayload(data),
-        )
-        const alumno = mapEstudianteFromApi(creado)
-        this.alumnos.push(alumno)
-        return alumno
-      } catch (error) {
-        throw error
-      } finally {
-        this.cargando = false
+      const { data: created } = await api.post(
+        `/establecimiento/${idEstablecimiento}/estudiantes`,
+        mapEstudianteToApi(data),
+      )
+
+      const mapped = mapEstudianteFromApi(created)
+      const index = this.alumnos.findIndex((alumno) => getAlumnoId(alumno) === mapped.id)
+
+      if (index === -1) {
+        this.alumnos.push(mapped)
+      } else {
+        this.alumnos[index] = { ...this.alumnos[index], ...mapped }
       }
+
+      return mapped
+    },
+
+    agregarAlumno(data) {
+      const establecimientoId = getEstablecimientoId()
+      const id = Date.now()
+
+      this.alumnos.push({
+        id,
+        id_alumno: id,
+        id_establecimiento: establecimientoId,
+        establecimientoId,
+        estado: 'Activo',
+        ...data,
+      })
     },
 
     actualizarAlumno(id, data) {

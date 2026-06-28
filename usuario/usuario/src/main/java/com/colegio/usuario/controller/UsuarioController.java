@@ -8,6 +8,7 @@ import com.colegio.usuario.dto.UsuarioDTO;
 import com.colegio.usuario.model.Rol;
 import com.colegio.usuario.service.UsuarioService;
 import com.colegio.usuario.dto.CambiarEstadoUsuarioRequest;
+import com.colegio.usuario.dto.EliminarUsuarioResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -90,9 +91,8 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        usuarioService.eliminar(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<EliminarUsuarioResponse> eliminar(@PathVariable Integer id) {
+        return ResponseEntity.ok(usuarioService.eliminar(id));
     }
 
     @PostMapping("/login")

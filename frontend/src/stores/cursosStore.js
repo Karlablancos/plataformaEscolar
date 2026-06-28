@@ -33,6 +33,14 @@ const mapEstadoToApi = (estado) => {
   return 'ACTIVO'
 }
 
+const sortCursosRecientesPrimero = (cursos) => {
+  return [...cursos].sort((a, b) => {
+    const ordenA = a._ordenReciente ?? getCursoId(a) ?? 0
+    const ordenB = b._ordenReciente ?? getCursoId(b) ?? 0
+    return ordenB - ordenA
+  })
+}
+
 const mapCursoFromApi = (dto) => {
   const esNivelSimce = dto.esNivelSimce ?? false
 
@@ -60,16 +68,17 @@ const mapCursoFromApi = (dto) => {
 const aplicarCursoActualizado = (cursos, cursoId, dto) => {
   const curso = mapCursoFromApi(dto)
   const index = cursos.findIndex((item) => getCursoId(item) === Number(cursoId))
+  const cursoConOrden = { ...curso, _ordenReciente: Date.now() }
 
   if (index === -1) {
-    return [...cursos, curso]
+    return [...cursos, cursoConOrden]
   }
 
   const alumnos = cursos[index].alumnos || []
   const asignaturas = cursos[index].asignaturas || []
 
   const actualizados = [...cursos]
-  actualizados[index] = { ...curso, alumnos, asignaturas }
+  actualizados[index] = { ...cursoConOrden, alumnos, asignaturas }
   return actualizados
 }
 
@@ -144,11 +153,13 @@ export const useCursosStore = defineStore('cursos', {
     cursosFiltradosNormalizados() {
       const establecimientoId = Number(resolveEstablecimientoId())
 
-      return this.cursosNormalizados.filter(
+      const filtrados = this.cursosNormalizados.filter(
         (curso) =>
           curso.id_establecimiento === establecimientoId &&
           curso.anio_academico === this.anioActivo,
       )
+
+      return sortCursosRecientesPrimero(filtrados)
     },
 
     getCursoById: (state) => {
@@ -223,7 +234,7 @@ export const useCursosStore = defineStore('cursos', {
           payload,
         )
 
-        const curso = mapCursoFromApi(creado)
+        const curso = { ...mapCursoFromApi(creado), _ordenReciente: Date.now() }
         this.cursos.push(curso)
         return curso
       } catch (error) {

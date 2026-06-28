@@ -5,9 +5,12 @@ import com.colegio.establecimiento.dto.ComunaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
+import com.colegio.establecimiento.dto.DocenteCreateRequestDTO;
 import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
+import com.colegio.establecimiento.dto.EstudianteCreateRequestDTO;
 import com.colegio.establecimiento.dto.EstudianteDTO;
+import com.colegio.establecimiento.dto.PeriodoAcademicoDTO;
 import com.colegio.establecimiento.dto.ProfesorJefeRequestDTO;
 import com.colegio.establecimiento.dto.RegionDTO;
 import com.colegio.establecimiento.dto.SalaDTO;
@@ -138,9 +141,14 @@ public class EstablecimientoController {
     @PostMapping("/{id}/estudiantes")
     public ResponseEntity<EstudianteDTO> crearEstudiante(
             @PathVariable Integer id,
+<<<<<<< HEAD
             @RequestBody EstudianteDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(establecimientoService.crearEstudiante(id, dto));
+=======
+            @RequestBody EstudianteCreateRequestDTO dto) {
+        return ResponseEntity.ok(establecimientoService.crearEstudiante(id, dto));
+>>>>>>> origin/develop
     }
 
     @GetMapping("/{id}/cursos/{idCurso}/estudiantes")
@@ -175,6 +183,13 @@ public class EstablecimientoController {
         return ResponseEntity.ok(establecimientoService.listarDocentes(id));
     }
 
+    @PostMapping("/{id}/docentes")
+    public ResponseEntity<DocenteDTO> crearDocente(
+            @PathVariable Integer id,
+            @RequestBody DocenteCreateRequestDTO dto) {
+        return ResponseEntity.ok(establecimientoService.crearDocente(id, dto));
+    }
+
     @PutMapping("/{id}/cursos/{idCurso}/profesor-jefe")
     public ResponseEntity<CursoDTO> asignarProfesorJefe(
             @PathVariable Integer id,
@@ -186,11 +201,36 @@ public class EstablecimientoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/periodos")
+    public ResponseEntity<List<PeriodoAcademicoDTO>> listarPeriodos(
+            @PathVariable Integer id,
+            @RequestParam Integer anio) {
+        return ResponseEntity.ok(establecimientoService.listarPeriodos(id, anio));
+    }
+
+    @PostMapping("/{id}/periodos")
+    public ResponseEntity<PeriodoAcademicoDTO> crearPeriodo(
+            @PathVariable Integer id,
+            @RequestBody PeriodoAcademicoDTO dto) {
+        return ResponseEntity.ok(establecimientoService.crearPeriodo(id, dto));
+    }
+
+    @PutMapping("/{id}/periodos/{idPeriodo}")
+    public ResponseEntity<PeriodoAcademicoDTO> actualizarPeriodo(
+            @PathVariable Integer id,
+            @PathVariable Integer idPeriodo,
+            @RequestBody PeriodoAcademicoDTO dto) {
+        return establecimientoService.actualizarPeriodo(id, idPeriodo, dto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/{id}/cursos/{idCurso}/asignaturas")
     public ResponseEntity<List<CursoAsignaturaDTO>> listarAsignaturasCurso(
             @PathVariable Integer id,
-            @PathVariable Integer idCurso) {
-        return ResponseEntity.ok(establecimientoService.listarAsignaturasCurso(id, idCurso));
+            @PathVariable Integer idCurso,
+            @RequestParam(required = false) Integer idPeriodo) {
+        return ResponseEntity.ok(establecimientoService.listarAsignaturasCurso(id, idCurso, idPeriodo));
     }
 
     @PostMapping("/{id}/cursos/{idCurso}/asignaturas")
@@ -206,8 +246,9 @@ public class EstablecimientoController {
     public ResponseEntity<Void> quitarAsignaturaCurso(
             @PathVariable Integer id,
             @PathVariable Integer idCurso,
-            @PathVariable Integer idAsignatura) {
-        if (!establecimientoService.quitarAsignaturaCurso(id, idCurso, idAsignatura)) {
+            @PathVariable Integer idAsignatura,
+            @RequestParam Integer idPeriodo) {
+        if (!establecimientoService.quitarAsignaturaCurso(id, idCurso, idAsignatura, idPeriodo)) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();

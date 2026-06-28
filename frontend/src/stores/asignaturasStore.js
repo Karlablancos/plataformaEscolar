@@ -348,6 +348,21 @@ export const useAsignaturasStore = defineStore('asignaturas', {
         throw new Error('El docente responsable es obligatorio.')
       }
 
+      const horasSemanales = Number(data.horas_semanales ?? data.horasSemanales)
+      if (!horasSemanales || horasSemanales < 1 || horasSemanales > 6) {
+        throw new Error('Las horas semanales son obligatorias (1 a 6).')
+      }
+
+      const idPeriodo = Number(data.id_periodo ?? data.idPeriodo)
+      if (!idPeriodo) {
+        throw new Error('El periodo académico es obligatorio.')
+      }
+
+      const idSala = Number(data.id_sala ?? data.idSala)
+      if (!idSala) {
+        throw new Error('La sala de clases es obligatoria.')
+      }
+
       this.cargando = true
       this.error = null
 
@@ -355,7 +370,9 @@ export const useAsignaturasStore = defineStore('asignaturas', {
         await api.post(`/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/asignaturas`, {
           idAsignatura: Number(asignaturaId),
           idDocente: Number(docenteId),
-          horasSemanales: data.horas_semanales ? Number(data.horas_semanales) : 4,
+          idPeriodo,
+          horasSemanales,
+          idSala,
         })
 
         return this.sincronizarAsignaturasCurso(cursoIdNumber)
@@ -367,13 +384,18 @@ export const useAsignaturasStore = defineStore('asignaturas', {
       }
     },
 
-    async quitarAsignaturaDeCurso(cursoId, asignaturaId) {
+    async quitarAsignaturaDeCurso(cursoId, asignaturaId, idPeriodo) {
       const idEstablecimiento = resolveEstablecimientoId()
       const cursoIdNumber = Number(cursoId)
       const asignaturaIdNumber = Number(asignaturaId)
+      const idPeriodoNumber = Number(idPeriodo)
 
       if (!idEstablecimiento) {
         throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      if (!idPeriodoNumber) {
+        throw new Error('El periodo académico es obligatorio.')
       }
 
       this.cargando = true
@@ -382,6 +404,7 @@ export const useAsignaturasStore = defineStore('asignaturas', {
       try {
         await api.delete(
           `/establecimiento/${idEstablecimiento}/cursos/${cursoIdNumber}/asignaturas/${asignaturaIdNumber}`,
+          { params: { idPeriodo: idPeriodoNumber } },
         )
 
         return this.sincronizarAsignaturasCurso(cursoIdNumber)
@@ -406,6 +429,8 @@ export const useAsignaturasStore = defineStore('asignaturas', {
 
       return this.agregarAsignaturaACurso(cursoIdNumber, asignaturaIdNumber, docenteId, {
         horas_semanales: relacion.horas_semanales ?? relacion.horasSemanales ?? 4,
+        id_periodo: relacion.id_periodo ?? relacion.periodoId ?? relacion.idPeriodo,
+        id_sala: relacion.id_sala ?? relacion.idSala,
       })
     },
 
@@ -424,7 +449,11 @@ export const useAsignaturasStore = defineStore('asignaturas', {
         cursoIdNumber,
         asignaturaIdNumber,
         relacion.docenteId ?? relacion.id_docente,
-        { horas_semanales: horasSemanales },
+        {
+          horas_semanales: horasSemanales,
+          id_periodo: relacion.id_periodo ?? relacion.periodoId ?? relacion.idPeriodo,
+          id_sala: relacion.id_sala ?? relacion.idSala,
+        },
       )
     },
 

@@ -3,7 +3,7 @@ import api from '@/api/axios'
 
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getDocenteId, getNombreCompleto } from './shared/helpers'
-import { mapDocenteFromApi } from './shared/docenteMapper'
+import { mapDocenteFromApi, mapDocenteToApi } from './shared/docenteMapper'
 
 export const useDocentesStore = defineStore('docentes', {
   state: () => ({
@@ -100,6 +100,32 @@ export const useDocentesStore = defineStore('docentes', {
 
     persistir() {
       saveToStorage('categoriasSned', this.categoriasSned)
+    },
+
+    async crearDocente(data) {
+      const idEstablecimiento =
+        getEstablecimientoId() ??
+        JSON.parse(localStorage.getItem('establecimientoActivo') || 'null')?.idEstablecimiento
+
+      if (!idEstablecimiento) {
+        throw new Error('No se encontró el establecimiento activo.')
+      }
+
+      const { data: created } = await api.post(
+        `/establecimiento/${idEstablecimiento}/docentes`,
+        mapDocenteToApi(data),
+      )
+
+      const mapped = mapDocenteFromApi(created)
+      const index = this.docentes.findIndex((docente) => getDocenteId(docente) === mapped.id)
+
+      if (index === -1) {
+        this.docentes.push(mapped)
+      } else {
+        this.docentes[index] = { ...this.docentes[index], ...mapped }
+      }
+
+      return mapped
     },
 
     agregarDocente(data) {

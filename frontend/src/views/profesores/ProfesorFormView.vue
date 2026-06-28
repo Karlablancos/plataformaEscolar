@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAcademicStore } from '@/stores/academicStore'
 import api from '@/api/axios'
+import { extractApiError } from '@/stores/shared/apiError'
 
 const route = useRoute()
 const router = useRouter()
@@ -68,14 +69,23 @@ watch(
   { immediate: true },
 )
 
-const guardar = () => {
-  if (esEdicion.value) {
-    academicStore.actualizarDocente(profesorId.value, { ...form })
-  } else {
-    academicStore.agregarDocente({ ...form })
-  }
+const guardando = ref(false)
 
-  router.push('/admin/profesores')
+const guardar = async () => {
+  guardando.value = true
+  try {
+    if (esEdicion.value) {
+      academicStore.actualizarDocente(profesorId.value, { ...form })
+    } else {
+      await academicStore.agregarProfesor({ ...form })
+    }
+    router.push('/admin/profesores')
+  } catch (error) {
+    console.error('Error al guardar profesor:', error)
+    alert(extractApiError(error, 'No se pudo guardar el profesor.'))
+  } finally {
+    guardando.value = false
+  }
 }
 </script>
 
@@ -199,7 +209,9 @@ const guardar = () => {
           Cancelar
         </RouterLink>
 
-        <button type="submit" class="btn btn-success btn-rounded">Guardar profesor</button>
+        <button type="submit" class="btn btn-success btn-rounded" :disabled="guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar profesor' }}
+        </button>
       </div>
     </form>
   </div>

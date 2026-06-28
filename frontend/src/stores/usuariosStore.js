@@ -140,11 +140,34 @@ export const useUsuariosStore = defineStore('usuarios', {
         this.loading = true
         this.error = null
 
-        await api.delete(`/usuarios/${idUsuario}`)
+        const { data } = await api.delete(`/usuarios/${idUsuario}`)
+
+        if (data?.accion === 'DESACTIVADO' && data.usuario) {
+          const usuarioActualizado = mapUsuario(data.usuario)
+          const index = this.usuarios.findIndex(
+            (usuario) => usuario.id_usuario === idUsuario,
+          )
+
+          if (index !== -1) {
+            this.usuarios[index] = usuarioActualizado
+          }
+
+          return {
+            accion: 'DESACTIVADO',
+            mensaje:
+              data.mensaje ||
+              'El usuario tiene registros asociados y fue marcado como inactivo.',
+          }
+        }
 
         this.usuarios = this.usuarios.filter(
           (usuario) => usuario.id_usuario !== idUsuario,
         )
+
+        return {
+          accion: 'ELIMINADO',
+          mensaje: data?.mensaje || 'Usuario eliminado correctamente.',
+        }
       } catch (error) {
         this.error = error
         console.error('Error eliminando usuario:', error)
