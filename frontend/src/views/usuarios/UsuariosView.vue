@@ -396,7 +396,7 @@
       v-model="showEliminarModal"
       message="¿Seguro que quieres eliminar este usuario?"
       :item-label="usuarioSeleccionado?.username || ''"
-      detail="Si el usuario está asociado a docentes, estudiantes, apoderados o mensajes, el sistema puede impedir la eliminación."
+      detail="Si el usuario está asociado a docentes, estudiantes, apoderados u otros registros, no se eliminará: quedará inactivo."
       :loading="usuariosStore.loading"
       @confirm="confirmarEliminarUsuario"
     >
@@ -623,15 +623,17 @@ const confirmarEliminarUsuario = async () => {
     mensajeExito.value = ''
     mensajeError.value = ''
 
-    await usuariosStore.eliminarUsuario(usuarioSeleccionado.value.id_usuario)
+    const resultado = await usuariosStore.eliminarUsuario(
+      usuarioSeleccionado.value.id_usuario,
+    )
 
-    mensajeExito.value = 'Usuario eliminado correctamente.'
+    mensajeExito.value = resultado.mensaje
     showEliminarModal.value = false
     usuarioSeleccionado.value = null
   } catch (error) {
     mensajeError.value = obtenerMensajeError(
       error,
-      'No se pudo eliminar el usuario. Puede estar asociado a otro registro.',
+      'No se pudo eliminar el usuario.',
     )
   }
 }

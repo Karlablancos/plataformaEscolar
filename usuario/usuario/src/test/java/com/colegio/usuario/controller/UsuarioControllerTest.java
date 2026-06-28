@@ -3,6 +3,7 @@ package com.colegio.usuario.controller;
 import com.colegio.usuario.dto.ActualizarUsuarioRequest;
 import com.colegio.usuario.dto.CambiarPasswordRequest;
 import com.colegio.usuario.dto.CrearUsuarioRequest;
+import com.colegio.usuario.dto.EliminarUsuarioResponse;
 import com.colegio.usuario.dto.UsuarioDTO;
 import com.colegio.usuario.service.UsuarioService;
 import org.junit.jupiter.api.Test;
@@ -189,13 +190,17 @@ class UsuarioControllerTest {
     // ── DELETE /usuarios/{id} ─────────────────────────────────────
 
     @Test
-    void eliminar_debeRetornar204SinContenido() {
-        doNothing().when(usuarioService).eliminar(1);
+    void eliminar_debeRetornar200ConResultado() {
+        EliminarUsuarioResponse response = new EliminarUsuarioResponse(
+                "ELIMINADO",
+                "Usuario eliminado correctamente.",
+                null);
+        when(usuarioService.eliminar(1)).thenReturn(response);
 
-        ResponseEntity<Void> respuesta = usuarioController.eliminar(1);
+        ResponseEntity<EliminarUsuarioResponse> respuesta = usuarioController.eliminar(1);
 
-        assertEquals(HttpStatus.NO_CONTENT, respuesta.getStatusCode());
-        assertNull(respuesta.getBody());
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals("ELIMINADO", respuesta.getBody().getAccion());
         verify(usuarioService, times(1)).eliminar(1);
     }
 }
