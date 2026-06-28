@@ -51,11 +51,8 @@ watch(regionId, () => {
 })
 
 onMounted(async () => {
-  const [regionesRes] = await Promise.all([
-    api.get('/establecimiento/regiones'),
-    cursosStore.cargarCursos().catch(() => {}),
-  ])
-  regiones.value = regionesRes.data
+  const { data } = await api.get('/establecimiento/regiones')
+  regiones.value = data
 })
 
 // ── RUT chileno auto-formato ──────────────────────────────────────────────────

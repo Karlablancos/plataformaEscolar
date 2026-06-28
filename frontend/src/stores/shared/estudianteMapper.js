@@ -47,19 +47,19 @@ export const mapEstudianteFromApi = (e) => ({
   promedio: 0,
 })
 
-export const mapEstudianteToApi = (data) => ({
+export const toEstudiantePayload = (data) => ({
   rut: data.rut ?? '',
   dv: data.dv ?? '',
   nombres: data.nombres ?? '',
   apellidoPaterno: data.apellidoPaterno ?? data.apellido_paterno ?? '',
   apellidoMaterno: data.apellidoMaterno ?? data.apellido_materno ?? '',
   fechaNacimiento: data.fechaNacimiento ?? data.fecha_nacimiento ?? null,
-  correoElectronico: data.correoElectronico ?? data.correo_electronico ?? null,
-  telefono: data.telefono ?? null,
-  calle: data.calle ?? null,
-  numero: data.numero ?? null,
+  correoElectronico: data.correoElectronico ?? data.correo_electronico ?? '',
+  telefono: data.telefono ?? '',
+  calle: data.calle ?? '',
+  numero: data.numero ?? '',
   idComuna: data.comunaId ?? data.idComuna ?? data.id_comuna ?? null,
-  colegioProcedente: data.colegioProcedente ?? data.colegio_procedente ?? null,
+  colegioProcedente: data.colegioProcedente ?? data.colegio_procedente ?? '',
   fechaMatricula: data.fechaMatricula ?? data.fecha_matricula ?? null,
   prioritario: Boolean(data.prioritario),
   preferente: Boolean(data.preferente),
@@ -67,5 +67,4 @@ export const mapEstudianteToApi = (data) => ({
   idTipoNee: data.tieneNee ? (data.tipoNeeId ?? data.idTipoNee ?? null) : null,
   enPie: Boolean(data.enPie),
   estado: data.estado ?? 'Activo',
-  idCurso: data.cursoId ? Number(data.cursoId) : null,
 })

@@ -141,14 +141,9 @@ public class EstablecimientoController {
     @PostMapping("/{id}/estudiantes")
     public ResponseEntity<EstudianteDTO> crearEstudiante(
             @PathVariable Integer id,
-<<<<<<< HEAD
             @RequestBody EstudianteDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(establecimientoService.crearEstudiante(id, dto));
-=======
-            @RequestBody EstudianteCreateRequestDTO dto) {
-        return ResponseEntity.ok(establecimientoService.crearEstudiante(id, dto));
->>>>>>> origin/develop
     }
 
     @GetMapping("/{id}/cursos/{idCurso}/estudiantes")

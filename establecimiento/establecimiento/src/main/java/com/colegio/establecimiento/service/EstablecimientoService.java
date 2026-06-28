@@ -22,8 +22,6 @@ import com.colegio.establecimiento.model.Docente;
 import com.colegio.establecimiento.model.Establecimiento;
 import com.colegio.establecimiento.model.Estudiante;
 import com.colegio.establecimiento.model.EstudianteCurso;
-import com.colegio.establecimiento.model.Rol;
-import com.colegio.establecimiento.model.Usuario;
 import com.colegio.establecimiento.model.Horario;
 import com.colegio.establecimiento.model.PeriodoAcademico;
 import com.colegio.establecimiento.model.Region;
@@ -39,8 +37,6 @@ import com.colegio.establecimiento.repository.DocenteRepository;
 import com.colegio.establecimiento.repository.EstablecimientoRepository;
 import com.colegio.establecimiento.repository.EstudianteCursoRepository;
 import com.colegio.establecimiento.repository.EstudianteRepository;
-import com.colegio.establecimiento.repository.RolRepository;
-import com.colegio.establecimiento.repository.UsuarioRepository;
 import com.colegio.establecimiento.repository.HorarioRepository;
 import com.colegio.establecimiento.repository.PeriodoAcademicoRepository;
 import com.colegio.establecimiento.repository.RegionRepository;
@@ -79,10 +75,7 @@ public class EstablecimientoService {
     private final RegionRepository regionRepository;
     private final ComunaRepository comunaRepository;
     private final SalaRepository salaRepository;
-<<<<<<< HEAD
-=======
     private final HorarioRepository horarioRepository;
->>>>>>> origin/develop
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
 
