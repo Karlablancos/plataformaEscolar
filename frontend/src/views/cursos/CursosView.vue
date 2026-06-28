@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useCursosStore } from '@/stores/cursosStore'
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
 
 const cursosStore = useCursosStore()
 const route = useRoute()
@@ -101,15 +102,23 @@ const guardarCurso = async () => {
   }
 }
 
-const eliminarCurso = async (curso) => {
-  const confirmar = confirm(`¿Seguro que deseas eliminar el curso ${curso.nombre}?`)
+const cursoAEliminar = ref(null)
+const showEliminarModal = ref(false)
 
-  if (!confirmar) return
+const abrirEliminarCurso = (curso) => {
+  cursoAEliminar.value = curso
+  showEliminarModal.value = true
+}
+
+const confirmarEliminarCurso = async () => {
+  if (!cursoAEliminar.value) return
 
   mensajeError.value = ''
 
   try {
-    await cursosStore.eliminarCurso(curso.id)
+    await cursosStore.eliminarCurso(cursoAEliminar.value.id)
+    showEliminarModal.value = false
+    cursoAEliminar.value = null
   } catch (error) {
     mensajeError.value = extraerMensajeError(error)
   }
@@ -206,7 +215,7 @@ onMounted(() => {
 
                   <button
                     class="btn btn-outline-danger btn-sm btn-rounded"
-                    @click="eliminarCurso(curso)"
+                    @click="abrirEliminarCurso(curso)"
                   >
                     Eliminar
                   </button>
@@ -336,5 +345,13 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <ConfirmDeleteModal
+      v-model="showEliminarModal"
+      message="¿Seguro que deseas eliminar este curso?"
+      :item-label="cursoAEliminar?.nombre || ''"
+      :loading="cursosStore.cargando"
+      @confirm="confirmarEliminarCurso"
+    />
   </div>
 </template>

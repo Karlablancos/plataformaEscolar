@@ -215,8 +215,6 @@
                       <li>
                         <button
                           class="dropdown-item text-danger"
-                          data-bs-toggle="modal"
-                          data-bs-target="#eliminarUsuarioModal"
                           @click="abrirModalEliminar(usuario)"
                         >
                           <i class="bi bi-trash me-2"></i>
@@ -394,64 +392,18 @@
       </div>
     </div>
 
-    <!-- Modal eliminar usuario -->
-    <div
-      class="modal fade"
-      id="eliminarUsuarioModal"
-      tabindex="-1"
-      aria-labelledby="eliminarUsuarioModalLabel"
-      aria-hidden="true"
+    <ConfirmDeleteModal
+      v-model="showEliminarModal"
+      message="¿Seguro que quieres eliminar este usuario?"
+      :item-label="usuarioSeleccionado?.username || ''"
+      detail="Si el usuario está asociado a docentes, estudiantes, apoderados o mensajes, el sistema puede impedir la eliminación."
+      :loading="usuariosStore.loading"
+      @confirm="confirmarEliminarUsuario"
     >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0">
-          <div class="modal-header">
-            <h5 class="modal-title" id="eliminarUsuarioModalLabel">
-              Confirmar eliminación
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-
-          <div class="modal-body">
-            <p class="mb-2">¿Seguro que quieres eliminar este usuario?</p>
-
-            <div v-if="usuarioSeleccionado" class="alert alert-light border mb-0">
-              <strong>{{ usuarioSeleccionado.username }}</strong><br />
-              <small class="text-muted">
-                {{ usuarioSeleccionado.correo_electronico }}
-              </small>
-            </div>
-
-            <p class="text-muted small mt-3 mb-0">
-              Si el usuario está asociado a docentes, estudiantes, apoderados o mensajes,
-              el sistema puede impedir la eliminación.
-            </p>
-          </div>
-
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-outline-secondary rounded-pill"
-              data-bs-dismiss="modal"
-            >
-              Cancelar
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-danger rounded-pill"
-              :disabled="usuariosStore.loading"
-              @click="confirmarEliminarUsuario"
-            >
-              <span
-                v-if="usuariosStore.loading"
-                class="spinner-border spinner-border-sm me-2"
-              ></span>
-              Eliminar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      <small v-if="usuarioSeleccionado" class="text-muted d-block mt-1">
+        {{ usuarioSeleccionado.correo_electronico }}
+      </small>
+    </ConfirmDeleteModal>
   </div>
 </template>
 
@@ -459,6 +411,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Modal } from 'bootstrap'
 import { useUsuariosStore } from '@/stores/usuariosStore'
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
 import api from '@/api/axios'
 
 const usuariosStore = useUsuariosStore()
@@ -551,6 +504,7 @@ const cancelarNuevoRolModal = () => {
 const mensajeExito = ref('')
 const mensajeError = ref('')
 const usuarioSeleccionado = ref(null)
+const showEliminarModal = ref(false)
 const modoEdicion = ref(false)
 const usuarioEditandoId = ref(null)
 
@@ -659,6 +613,7 @@ const abrirModalEliminar = (usuario) => {
   mensajeExito.value = ''
   mensajeError.value = ''
   usuarioSeleccionado.value = usuario
+  showEliminarModal.value = true
 }
 
 const confirmarEliminarUsuario = async () => {
@@ -671,7 +626,7 @@ const confirmarEliminarUsuario = async () => {
     await usuariosStore.eliminarUsuario(usuarioSeleccionado.value.id_usuario)
 
     mensajeExito.value = 'Usuario eliminado correctamente.'
-    cerrarModal('eliminarUsuarioModal')
+    showEliminarModal.value = false
     usuarioSeleccionado.value = null
   } catch (error) {
     mensajeError.value = obtenerMensajeError(

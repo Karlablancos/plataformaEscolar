@@ -3,6 +3,7 @@ import { computed, ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAlumnosStore } from '@/stores/alumnosStore'
 import { useCursosStore } from '@/stores/cursosStore'
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
 
 const alumnosStore = useAlumnosStore()
 const cursosStore = useCursosStore()
@@ -119,12 +120,20 @@ const alumnosFiltrados = computed(() => {
   })
 })
 
-const eliminarAlumno = (alumno) => {
-  const confirmar = window.confirm(`¿Seguro que deseas eliminar a ${getNombreAlumno(alumno)}?`)
+const alumnoAEliminar = ref(null)
+const showEliminarModal = ref(false)
 
-  if (!confirmar) return
+const abrirEliminarAlumno = (alumno) => {
+  alumnoAEliminar.value = alumno
+  showEliminarModal.value = true
+}
 
-  alumnosStore.eliminarAlumno(getAlumnoId(alumno))
+const confirmarEliminarAlumno = () => {
+  if (!alumnoAEliminar.value) return
+
+  alumnosStore.eliminarAlumno(getAlumnoId(alumnoAEliminar.value))
+  showEliminarModal.value = false
+  alumnoAEliminar.value = null
 }
 </script>
 
@@ -321,7 +330,7 @@ const eliminarAlumno = (alumno) => {
                         <button
                           type="button"
                           class="dropdown-item text-danger"
-                          @click="eliminarAlumno(alumno)"
+                          @click="abrirEliminarAlumno(alumno)"
                         >
                           <i class="bi bi-trash me-2"></i>
                           Eliminar
@@ -342,5 +351,12 @@ const eliminarAlumno = (alumno) => {
         </div>
       </div>
     </div>
+
+    <ConfirmDeleteModal
+      v-model="showEliminarModal"
+      message="¿Seguro que deseas eliminar a este alumno?"
+      :item-label="alumnoAEliminar ? getNombreAlumno(alumnoAEliminar) : ''"
+      @confirm="confirmarEliminarAlumno"
+    />
   </section>
 </template>
