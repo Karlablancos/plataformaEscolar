@@ -1,12 +1,5 @@
 import { defineStore } from 'pinia'
-import {
-  apoderadosMock,
-  estudianteApoderadoMock,
-  tiposNeeMock,
-  antecedentesSaludMock,
-  antecedentesFamiliaresMock,
-  documentosEstudianteMock,
-} from '../data'
+
 
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getNombreCompleto } from './shared/helpers'
@@ -24,13 +17,13 @@ export const useAlumnosStore = defineStore('alumnos', {
     alumnos: [],
     cargando: false,
 
-    apoderados: loadFromStorage('apoderados', apoderadosMock),
-    estudianteApoderado: loadFromStorage('estudianteApoderado', estudianteApoderadoMock),
+    apoderados: loadFromStorage('apoderados', []),
+    estudianteApoderado: loadFromStorage('estudianteApoderado', []),
 
-    tiposNee: loadFromStorage('tiposNee', tiposNeeMock),
-    antecedentesSalud: loadFromStorage('antecedentesSalud', antecedentesSaludMock),
-    antecedentesFamiliares: loadFromStorage('antecedentesFamiliares', antecedentesFamiliaresMock),
-    documentosEstudiante: loadFromStorage('documentosEstudiante', documentosEstudianteMock),
+    tiposNee: loadFromStorage('tiposNee', []),
+    antecedentesSalud: loadFromStorage('antecedentesSalud', []),
+    antecedentesFamiliares: loadFromStorage('antecedentesFamiliares', []),
+    documentosEstudiante: loadFromStorage('documentosEstudiante', []),
   }),
 
   getters: {
@@ -439,10 +432,10 @@ export const useAlumnosStore = defineStore('alumnos', {
       this.alumnos = []
       this.apoderados = []
       this.estudianteApoderado = []
-      this.tiposNee = [...tiposNeeMock]
-      this.antecedentesSalud = [...antecedentesSaludMock]
-      this.antecedentesFamiliares = [...antecedentesFamiliaresMock]
-      this.documentosEstudiante = [...documentosEstudianteMock]
+      this.tiposNee = []
+      this.antecedentesSalud = []
+      this.antecedentesFamiliares = []
+      this.documentosEstudiante = []
 
       this.persistir()
     },

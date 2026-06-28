@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/api/axios'
-import { categoriasSnedMock } from '../data'
+
 import { loadFromStorage, saveToStorage } from './shared/persistence'
 import { getEstablecimientoId, getDocenteId, getNombreCompleto } from './shared/helpers'
 import { mapDocenteFromApi } from './shared/docenteMapper'
@@ -9,7 +9,7 @@ export const useDocentesStore = defineStore('docentes', {
   state: () => ({
     docentes: [],
     cargando: false,
-    categoriasSned: loadFromStorage('categoriasSned', categoriasSnedMock),
+    categoriasSned: loadFromStorage('categoriasSned', []),
   }),
 
   getters: {
@@ -163,7 +163,7 @@ export const useDocentesStore = defineStore('docentes', {
 
     resetData() {
       this.docentes = []
-      this.categoriasSned = [...categoriasSnedMock]
+      this.categoriasSned = []
       this.persistir()
     },
   },
