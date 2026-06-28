@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 FROM eclipse-temurin:21-jdk AS build
 
 WORKDIR /app
@@ -13,23 +12,7 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
-=======
-FROM eclipse-temurin:22-jdk AS build
-
-WORKDIR /app
-
-COPY . .
-
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
-
-FROM eclipse-temurin:22-jre
-
-WORKDIR /app
-
-COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8082
->>>>>>> origin/develop
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
