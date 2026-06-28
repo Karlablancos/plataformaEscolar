@@ -5,6 +5,7 @@ import com.colegio.establecimiento.dto.ComunaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaDTO;
 import com.colegio.establecimiento.dto.CursoAsignaturaRequestDTO;
 import com.colegio.establecimiento.dto.CursoDTO;
+import com.colegio.establecimiento.dto.DocenteCreateRequestDTO;
 import com.colegio.establecimiento.dto.DocenteDTO;
 import com.colegio.establecimiento.dto.EstablecimientoDTO;
 import com.colegio.establecimiento.dto.EstudianteCreateRequestDTO;
@@ -455,6 +456,59 @@ public class EstablecimientoService {
                 .toList();
     }
 
+    @Transactional
+    public DocenteDTO crearDocente(Integer idEstablecimiento, DocenteCreateRequestDTO request) {
+        validarEstablecimiento(idEstablecimiento);
+
+        if (request == null || request.getNombres() == null || request.getNombres().isBlank()) {
+            throw new IllegalArgumentException("Los nombres del docente son obligatorios.");
+        }
+        if (request.getApellidoPaterno() == null || request.getApellidoPaterno().isBlank()) {
+            throw new IllegalArgumentException("El apellido paterno es obligatorio.");
+        }
+        if (request.getRut() == null || request.getRut().isBlank()) {
+            throw new IllegalArgumentException("El RUT es obligatorio.");
+        }
+
+        RutPart rutPart = resolveRutPart(request.getRut(), request.getDv());
+        Integer idUsuario = crearUsuarioDocente(idEstablecimiento, rutPart, request);
+
+        Docente docente = new Docente();
+        docente.setIdEstablecimiento(idEstablecimiento);
+        docente.setIdUsuario(idUsuario);
+        docente.setIdCategoriaSned(request.getIdCategoriaSned());
+        docente.setAnioEvaluacionSned(
+                request.getAnioEvaluacionSned() != null
+                        ? request.getAnioEvaluacionSned()
+                        : LocalDate.now().getYear());
+        docente.setRut(rutPart.rut());
+        docente.setDv(rutPart.dv());
+        docente.setNombres(request.getNombres().trim());
+        docente.setApellidoPaterno(request.getApellidoPaterno().trim());
+        docente.setApellidoMaterno(
+                request.getApellidoMaterno() != null ? request.getApellidoMaterno().trim() : "");
+        docente.setFechaNacimiento(
+                request.getFechaNacimiento() != null
+                        ? request.getFechaNacimiento()
+                        : LocalDate.of(1990, 1, 1));
+        docente.setCorreoElectronico(
+                valorODefault(request.getCorreoElectronico(), "sin-correo@bohiggins.cl"));
+        docente.setTelefono(valorODefault(request.getTelefono(), "000000000"));
+        docente.setCalle(valorODefault(request.getCalle(), "Sin calle"));
+        docente.setNumero(valorODefault(request.getNumero(), "S/N"));
+        docente.setIdComuna(request.getIdComuna() != null ? request.getIdComuna() : 12);
+        docente.setFechaContratacion(
+                request.getFechaContratacion() != null ? request.getFechaContratacion() : LocalDate.now());
+        docente.setEstado(normalizarEstadoRegistro(request.getEstado()));
+
+        try {
+            return toDocenteDTO(docenteRepository.save(docente));
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(
+                    "No se pudo registrar el docente. Verifica RUT, comuna y categoría SNED.");
+        }
+    }
+
     public Optional<CursoDTO> asignarProfesorJefe(
             Integer idEstablecimiento, Integer idCurso, Integer idDocente) {
         return cursoRepository.findByIdCursoAndIdEstablecimiento(idCurso, idEstablecimiento)
@@ -750,6 +804,57 @@ public class EstablecimientoService {
                         (actual, duplicado) -> actual));
     }
 
+    private Integer crearUsuarioDocente(
+            Integer idEstablecimiento, RutPart rutPart, DocenteCreateRequestDTO request) {
+        String username = derivarUsernameDocente(request, rutPart);
+        if (usuarioRepository.existsByUsernameAndIdEstablecimiento(username, idEstablecimiento)) {
+            throw new IllegalArgumentException("Ya existe un usuario con ese correo o RUT.");
+        }
+
+        Integer idRol = rolRepository.findByNombreRolIgnoreCase("DOCENTE")
+                .map(Rol::getIdRol)
+                .orElseThrow(() -> new IllegalArgumentException("Rol DOCENTE no configurado en el sistema."));
+
+        Usuario usuario = new Usuario();
+        usuario.setIdEstablecimiento(idEstablecimiento);
+        usuario.setIdRol(idRol);
+        usuario.setUsername(username);
+        usuario.setPasswordHash(DEFAULT_PASSWORD_HASH);
+        usuario.setCorreoElectronico(
+                valorODefault(request.getCorreoElectronico(), "sin-correo@bohiggins.cl"));
+        usuario.setIntentosFallidos(0);
+        usuario.setBloqueado(false);
+        usuario.setFechaCreacion(LocalDateTime.now());
+        usuario.setEstado("ACTIVO");
+
+        return usuarioRepository.save(usuario).getIdUsuario();
+    }
+
+    private String derivarUsernameDocente(DocenteCreateRequestDTO request, RutPart rutPart) {
+        String correo = request.getCorreoElectronico();
+        if (correo != null && correo.contains("@")) {
+            return correo.substring(0, correo.indexOf('@')).trim().toLowerCase();
+        }
+        return "docente." + rutPart.rut();
+    }
+
+    private RutPart resolveRutPart(String rut, String dv) {
+        if (dv != null && !dv.isBlank()) {
+            String cuerpo = rut.replaceAll("[^0-9]", "");
+            if (cuerpo.isEmpty()) {
+                throw new IllegalArgumentException("RUT inválido.");
+            }
+            if (cuerpo.length() > 8) {
+                throw new IllegalArgumentException("RUT inválido.");
+            }
+            while (cuerpo.length() < 8) {
+                cuerpo = "0" + cuerpo;
+            }
+            return new RutPart(cuerpo, dv.trim().toUpperCase());
+        }
+        return parseRut(rut);
+    }
+
     private Integer crearUsuarioEstudiante(
             Integer idEstablecimiento, RutPart rutPart, EstudianteCreateRequestDTO request) {
         String username = "alumno." + rutPart.rut();
@@ -809,6 +914,10 @@ public class EstablecimientoService {
     }
 
     private String normalizarEstadoEstudiante(String estado) {
+        return normalizarEstadoRegistro(estado);
+    }
+
+    private String normalizarEstadoRegistro(String estado) {
         if (estado == null || estado.isBlank()) {
             return "ACTIVO";
         }

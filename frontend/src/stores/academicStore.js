@@ -180,8 +180,8 @@ export const useAcademicStore = defineStore('academic', {
       asignaturasStore.asignaturasPorCurso = resto
     },
 
-    agregarDocente(data) {
-      useDocentesStore().agregarDocente(data)
+    async agregarDocente(data) {
+      return useDocentesStore().crearDocente(data)
     },
 
     actualizarDocente(id, data) {
@@ -202,8 +202,8 @@ export const useAcademicStore = defineStore('academic', {
       cursosStore.persistir()
     },
 
-    agregarProfesor(data) {
-      useDocentesStore().agregarProfesor(data)
+    async agregarProfesor(data) {
+      return this.agregarDocente(data)
     },
 
     actualizarProfesor(id, data) {
