@@ -88,6 +88,27 @@ Configuracion observada:
 - `server.port=8082`
 - `spring.jpa.hibernate.ddl-auto=validate`
 
+## Microservicio Academico
+
+Declarado en `academico-service/academico-service/pom.xml` y `application.properties`.
+
+| Tecnologia | Version/configuracion | Uso observado |
+| --- | --- | --- |
+| Java | `21` | Runtime configurado en Maven. |
+| Spring Boot | `3.5.15` | Base del microservicio. |
+| Spring Web | dependencia Maven | API REST. |
+| Spring Data JPA | dependencia Maven | Persistencia. |
+| Spring Validation | dependencia Maven | Validacion. |
+| Spring Actuator | dependencia Maven | Monitoreo. |
+| JaCoCo | `0.8.11` | Cobertura de pruebas. |
+| PostgreSQL Driver | runtime | Conexion a PostgreSQL. |
+| Lombok | dependencia Maven | DTOs y servicios. |
+
+Configuracion observada:
+
+- `server.port=8084`
+- `spring.jpa.hibernate.ddl-auto=update`
+
 ## Microservicio Asistencia
 
 Declarado en `asistencia/asistencia/pom.xml` y `application.properties`.
@@ -122,5 +143,6 @@ Configuracion observada:
 - `usuario/usuario/pom.xml`
 - `establecimiento/establecimiento/pom.xml`
 - `asistencia/asistencia/pom.xml`
+- `academico-service/academico-service/pom.xml`
 - `docker-compose.yml`
 - `*/src/main/resources/application.*`

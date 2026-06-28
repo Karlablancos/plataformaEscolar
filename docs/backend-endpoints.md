@@ -43,7 +43,8 @@ Declaradas en `application.yaml`:
 | --- | --- |
 | `/usuarios`, `/usuarios/**` | `http://usuario-service:8081` |
 | `/establecimiento`, `/establecimiento/**` | `http://establecimiento-service:8082` |
-| `/asistencias`, `/asistencias/**` | `http://asistencia-service:8083` |
+| `/asistencia`, `/asistencia/**` | `http://asistencia-service:8083` |
+| `/evaluacion`, `/evaluacion/**`, `/notas`, `/notas/**` | `http://academico-service:8084` |
 
 ## Microservicio Usuario
 
@@ -227,11 +228,59 @@ Base observada:
 | `justificada` | `Boolean` |
 | `observacion` | `String` |
 
+## Microservicio Academico
+
+Base observada:
+
+- Puerto configurado: `8084`.
+- Controladores: `@RequestMapping("/evaluacion")` y `@RequestMapping("/notas")`.
+
+### Evaluaciones
+
+| Metodo | Ruta | Request | Response | Comportamiento observado |
+| --- | --- | --- | --- | --- |
+| `POST` | `/evaluacion` | `EvaluacionDTO` | `EvaluacionDTO` | Crea una evaluacion. |
+| `GET` | `/evaluacion/{id}` | Path `id` | `EvaluacionDTO` | Busca evaluacion por ID. |
+| `GET` | `/evaluacion/curso/{idCurso}` | Path `idCurso` | `List<EvaluacionDTO>` | Lista evaluaciones por curso. |
+| `PUT` | `/evaluacion/{id}` | `EvaluacionDTO` | `EvaluacionDTO` | Actualiza una evaluacion. |
+| `DELETE` | `/evaluacion/{id}` | Path `id` | `204` | Elimina una evaluacion. |
+
+`EvaluacionDTO`:
+
+| Campo | Tipo |
+| --- | --- |
+| `id` | `Long` |
+| `nombre` | `String` |
+| `tipo` | `TipoEvaluacion` (enum) |
+| `ponderacion` | `BigDecimal` |
+| `fecha` | `LocalDate` |
+| `idCurso` | `Long` |
+| `idAsignatura` | `Long` |
+| `idDocente` | `Long` |
+| `idEstablecimiento` | `Long` |
+
+### Notas
+
+| Metodo | Ruta | Request | Response | Comportamiento observado |
+| --- | --- | --- | --- | --- |
+| `POST` | `/notas` | `NotaDTO` | `NotaDTO` | Registra una nota. |
+| `GET` | `/notas/{id}` | Path `id` | `NotaDTO` | Busca nota por ID. |
+| `GET` | `/notas/promedio` | Query `idEstudiante`, `idAsignatura` | `Map<String,Object>` | Calcula promedio ponderado del estudiante en una asignatura. |
+| `GET` | `/notas/promocion` | Query `idEstudiante` | `Map<String,Object>` | Determina si el estudiante es promovido segun Decreto 67/2018. |
+
+`NotaDTO`:
+
+| Campo | Tipo |
+| --- | --- |
+| `id` | `Long` |
+| `calificacion` | `BigDecimal` |
+| `idEvaluacion` | `Long` |
+| `idEstudiante` | `Long` |
+| `idEstablecimiento` | `Long` |
+
 ## Observaciones
 
-- El README del BFF lista `/asistencia/**` como ruta protegida, pero `application.yaml` contiene `/asistencias,/asistencias/**`.
-- El controlador real de asistencia usa `/asistencia`.
-- No se documentan endpoints para notas, evaluaciones, mensajes, horarios, docentes o apoderados porque no se encontraron controladores REST para esos dominios.
+- No se documentan endpoints para mensajes, horarios, docentes o apoderados porque no se encontraron controladores REST para esos dominios.
 
 ## Fuentes
 
@@ -240,4 +289,6 @@ Base observada:
 - `usuario/usuario/src/main/java/com/colegio/usuario/controller/UsuarioController.java`
 - `establecimiento/establecimiento/src/main/java/com/colegio/establecimiento/controller/EstablecimientoController.java`
 - `asistencia/asistencia/src/main/java/com/colegio/asistencia/controller/AsistenciaController.java`
+- `academico-service/academico-service/src/main/java/com/colegio/academico/controller/EvaluacionController.java`
+- `academico-service/academico-service/src/main/java/com/colegio/academico/controller/NotaController.java`
 - DTOs en `*/src/main/java/**/dto/*.java`

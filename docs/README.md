@@ -22,6 +22,7 @@ La documentacion no agrega funcionalidades ni define comportamiento no presente 
 - `usuario/usuario`: microservicio de usuarios y autenticacion interna.
 - `establecimiento/establecimiento`: microservicio de establecimiento, cursos, asignaturas y estudiantes.
 - `asistencia/asistencia`: microservicio de asistencia.
+- `academico-service/academico-service`: microservicio academico de evaluaciones, notas y promedios.
 - `database`: scripts SQL de estructura, triggers, indices, procedimientos y poblado.
 
 ## Fuentes principales

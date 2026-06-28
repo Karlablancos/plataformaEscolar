@@ -15,6 +15,7 @@ Segun `repositorios.txt`, el repositorio principal contiene los componentes back
 | Usuario | `usuario/usuario` | `8081` | Gestion de usuarios y autenticacion interna con password hash. |
 | Establecimiento | `establecimiento/establecimiento` | `8082` | Consulta de establecimientos, cursos, asignaturas y estudiantes. |
 | Asistencia | `asistencia/asistencia` | `8083` | Consulta y registro de asistencia de estudiantes. |
+| Academico | `academico-service/academico-service` | `8084` | Evaluaciones, notas, promedios ponderados y promocion segun Decreto 67/2018. |
 | PostgreSQL | `database` | `5432` | Esquema relacional, datos iniciales, triggers, indices y funciones. |
 
 ## Orquestacion
@@ -25,10 +26,11 @@ Segun `repositorios.txt`, el repositorio principal contiene los componentes back
 - `usuario-service`, construido desde `./usuario/usuario`.
 - `establecimiento-service`, construido desde `./establecimiento/establecimiento`.
 - `asistencia-service`, construido desde `./asistencia/asistencia`.
+- `academico-service`, construido desde `./academico-service/academico-service`.
 - `bff-gateway`, construido desde `./bff-gateway/bff-gateway`.
 - `frontend`, construido desde `./frontend`.
 
-Los microservicios dependen de `postgres` con `condition: service_healthy`. El BFF depende de los tres microservicios. El frontend declara dependencia de los tres microservicios.
+Los microservicios dependen de `postgres` con `condition: service_healthy`. El BFF depende de `usuario-service`, `establecimiento-service` y `asistencia-service`. El frontend depende de `bff-gateway`.
 
 ## Comunicacion
 
@@ -43,27 +45,25 @@ El BFF Gateway configura rutas Spring Cloud Gateway:
 | --- | --- |
 | `/usuarios`, `/usuarios/**` | `http://usuario-service:8081` |
 | `/establecimiento`, `/establecimiento/**` | `http://establecimiento-service:8082` |
-| `/asistencias`, `/asistencias/**` | `http://asistencia-service:8083` |
-
-El controlador de asistencia expone `/asistencia`, mientras que el gateway configura `/asistencias`. Esta diferencia esta documentada como discrepancia observada.
+| `/asistencia`, `/asistencia/**` | `http://asistencia-service:8083` |
+| `/evaluacion`, `/evaluacion/**`, `/notas`, `/notas/**` | `http://academico-service:8084` |
 
 ## Persistencia
 
-Los servicios `usuario`, `establecimiento` y `asistencia` usan PostgreSQL mediante Spring Data JPA.
+Los servicios `usuario`, `establecimiento`, `asistencia` y `academico` usan PostgreSQL mediante Spring Data JPA.
 
 Configuracion observada:
 
 - `usuario`: `spring.jpa.hibernate.ddl-auto=update`.
-- `establecimiento`: `spring.jpa.hibernate.ddl-auto=validate`.
+- `establecimiento`: `spring.jpa.hibernate.ddl-auto=validate` (sobreescrito a `none` en docker-compose).
 - `asistencia`: `spring.jpa.hibernate.ddl-auto=validate`.
-- `docker-compose.yml`: `establecimiento-service` define `SPRING_JPA_HIBERNATE_DDL_AUTO=none`.
+- `academico`: `spring.jpa.hibernate.ddl-auto=update`.
 
 ## Observaciones
 
 - El README de `bff-gateway` indica puerto `8086`, pero `application.yaml` y `docker-compose.yml` configuran `8080`.
 - El README de `bff-gateway` indica Java 22 y Spring Boot 4.0.6, pero el `pom.xml` del BFF declara Java 21 y Spring Boot 3.4.5.
 - El README de `usuario` indica Spring Boot 3.4.5, pero el `pom.xml` de `usuario` declara Spring Boot 3.5.14.
-- La ruta gateway de asistencia esta configurada como `/asistencias/**`; el controlador usa `/asistencia`.
 
 ## Fuentes
 
@@ -75,3 +75,4 @@ Configuracion observada:
 - `usuario/usuario/src/main/resources/application.properties`
 - `establecimiento/establecimiento/src/main/resources/application.properties`
 - `asistencia/asistencia/src/main/resources/application.properties`
+- `academico-service/academico-service/src/main/resources/application.properties`

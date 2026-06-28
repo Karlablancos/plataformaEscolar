@@ -11,6 +11,7 @@ El repositorio separa frontend, BFF Gateway, microservicios y base de datos:
 - `usuario/usuario`
 - `establecimiento/establecimiento`
 - `asistencia/asistencia`
+- `academico-service/academico-service`
 - `database`
 
 `docker-compose.yml` orquesta los servicios y conecta los microservicios a PostgreSQL.
@@ -20,7 +21,7 @@ El repositorio separa frontend, BFF Gateway, microservicios y base de datos:
 El BFF usa Spring Cloud Gateway y expone:
 
 - endpoints propios bajo `/auth`.
-- rutas proxy hacia `usuario-service`, `establecimiento-service` y `asistencia-service`.
+- rutas proxy hacia `usuario-service`, `establecimiento-service`, `asistencia-service` y `academico-service`.
 
 `AuthController` usa `WebClient` para llamar a microservicios. `application.yaml` define URLs internas:
 
@@ -88,6 +89,7 @@ Los controladores exponen DTOs y requests especificos:
 - Usuario: `UsuarioDTO`, `CrearUsuarioRequest`, `ActualizarUsuarioRequest`, `CambiarEstadoUsuarioRequest`, `CambiarPasswordRequest`, `LoginRequest`.
 - Establecimiento: `EstablecimientoDTO`, `CursoDTO`, `AsignaturaDTO`, `EstudianteDTO`.
 - Asistencia: `AsistenciaDTO`.
+- Academico: `EvaluacionDTO`, `NotaDTO`.
 
 ## Patron Factory en usuarios
 
@@ -155,7 +157,6 @@ Estas observaciones provienen de diferencias entre archivos existentes:
 - BFF README: puerto `8086`; configuracion real: `8080`.
 - BFF README: Java 22 y Spring Boot 4.0.6; `pom.xml`: Java 21 y Spring Boot 3.4.5.
 - Usuario README: Spring Boot 3.4.5; `pom.xml`: Spring Boot 3.5.14.
-- Gateway configura `/asistencias/**`; controlador de asistencia expone `/asistencia`.
 - Frontend llama `GET /establecimiento/{idEstab}` en `SostenedorDashboardView.vue`; el controlador observado no declara `GET /establecimiento/{id}`.
 
 ## Fuentes

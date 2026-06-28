@@ -149,6 +149,8 @@ Entidades consultadas por APIs existentes:
 - `asignatura`: usado por `establecimiento-service`.
 - `estudiante`: usado por `establecimiento-service`.
 - `asistencia`: usado por `asistencia-service`.
+- `evaluacion`: usado por `academico-service`.
+- `nota`: usado por `academico-service`.
 
 Tablas sin controlador REST observado:
 
@@ -169,8 +171,6 @@ Tablas sin controlador REST observado:
 - `estudiante_curso`
 - `anotacion`
 - `tipo_evaluacion`
-- `evaluacion`
-- `nota`
 - `mensaje`
 - `mensaje_destinatario`
 
